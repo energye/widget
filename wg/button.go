@@ -1,10 +1,13 @@
 package wg
 
 import (
+	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
 	"math"
+	"path/filepath"
+	"strings"
 )
 
 type RoundedCorner = int32
@@ -18,12 +21,6 @@ const (
 
 type RoundedCorners = types.TSet
 
-type TButtonIcon struct {
-	Icon []byte
-	X    int32
-	Y    int32
-}
-
 type TButton struct {
 	lcl.ICustomGraphicControl
 	startColor               colors.TColor  // 按钮起始渐变颜色
@@ -34,8 +31,12 @@ type TButton struct {
 	isEnter                  bool           // 鼠标是否移入
 	isDown                   bool           // 鼠标是否按下
 	RoundedCorner            RoundedCorners // 按钮圆角方向，默认四角
-	Icons                    []TButtonIcon  // 按钮上的图标
 	TextOffSetX, TextOffSetY int32          // 文本显示偏移位置
+	// 图标
+	iconFavorite       lcl.IPicture // 按钮前置图标
+	iconClose          lcl.IPicture // 按钮关闭图标
+	iconCloseHighlight lcl.IPicture // 按钮关闭图标 高亮
+	isEnterClose       bool         // 鼠标是否移入关闭图标
 	// 用户事件
 	onPaint      lcl.TNotifyEvent
 	onMouseEnter lcl.TNotifyEvent
@@ -61,8 +62,19 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.ICustomGraphicControl.SetOnMouseLeave(m.leave)
 	m.ICustomGraphicControl.SetOnMouseDown(m.down)
 	m.ICustomGraphicControl.SetOnMouseUp(m.up)
+	m.ICustomGraphicControl.SetOnMouseMove(m.move)
 	m.RoundedCorner = types.NewSet(RcLeftTop, RcRightTop, RcLeftBottom, RcRightBottom)
+	m.iconFavorite = lcl.NewPicture()
+	m.iconClose = lcl.NewPicture()
+	m.iconCloseHighlight = lcl.NewPicture()
+	m.iconFavorite.SetOnChange(m.iconChange)
+	m.iconClose.SetOnChange(m.iconChange)
+	m.iconCloseHighlight.SetOnChange(m.iconChange)
 	return m
+}
+
+func (m *TButton) iconChange(sender lcl.IObject) {
+	m.Invalidate()
 }
 
 func (m *TButton) enter(sender lcl.IObject) {
@@ -73,8 +85,28 @@ func (m *TButton) enter(sender lcl.IObject) {
 	}
 }
 
+func (m *TButton) isCloseArea(X int32, Y int32) bool {
+	rect := m.ClientRect()
+	closeX := rect.Width() - m.iconClose.Width() - 10
+	closeY := rect.Height()/2 - m.iconClose.Height()/2
+	return X >= closeX && X <= rect.Width()-10 && Y >= closeY && Y <= rect.Height()/2+m.iconClose.Height()
+}
+
+func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y int32) {
+	if m.isCloseArea(X, Y) {
+		if !m.isEnterClose {
+			m.isEnterClose = true
+			m.Invalidate()
+		}
+	} else if m.isEnterClose {
+		m.isEnterClose = false
+		m.Invalidate()
+	}
+}
+
 func (m *TButton) leave(sender lcl.IObject) {
 	m.isEnter = false
+	m.isEnterClose = false
 	m.Invalidate()
 	if m.onMouseLeave != nil {
 		m.onMouseLeave(sender)
@@ -82,10 +114,14 @@ func (m *TButton) leave(sender lcl.IObject) {
 }
 
 func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
-	m.isDown = true
-	m.Invalidate()
-	if m.onMouseDown != nil {
-		m.onMouseDown(sender, button, shift, X, Y)
+	if m.isCloseArea(X, Y) {
+		fmt.Println("关闭X点击")
+	} else {
+		m.isDown = true
+		m.Invalidate()
+		if m.onMouseDown != nil {
+			m.onMouseDown(sender, button, shift, X, Y)
+		}
 	}
 }
 
@@ -171,6 +207,29 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	// 绘制主文字
 	//canvas.FontToFont().SetColor(colors.ClWhite)
 	canvas.TextOutWithIntX2Unicodestring(textX, textY, text)
+
+	// 绘制图标 favorite
+	favY := rect.Height()/2 - m.iconFavorite.Height()/2
+	canvas.DrawWithIntX2Graphic(10, favY, m.iconFavorite.Graphic())
+	// 绘制图标 close
+	iconClose := m.iconClose
+	if m.isEnterClose {
+		iconClose = m.iconCloseHighlight
+	}
+	closeX := rect.Width() - iconClose.Width() - 10
+	closeY := rect.Height()/2 - iconClose.Height()/2
+	canvas.DrawWithIntX2Graphic(closeX, closeY, iconClose.Graphic())
+}
+
+func (m *TButton) SetIconFavorite(filePath string) {
+	m.iconFavorite.LoadFromFile(filePath)
+}
+
+func (m *TButton) SetIconClose(filePath string) {
+	path, name := filepath.Split(filePath)
+	m.iconClose.LoadFromFile(filePath)
+	ns := strings.Split(name, ".")
+	m.iconCloseHighlight.LoadFromFile(filepath.Join(path, ns[0]+"_enter.png"))
 }
 
 func (m *TButton) paint(sender lcl.IObject) {
