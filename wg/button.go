@@ -56,7 +56,7 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.startColor = colors.ClBlue
 	m.endColor = colors.ClNavy
 	m.alpha = 180
-	m.radius = 15
+	m.radius = 10
 	m.ICustomGraphicControl.SetOnPaint(m.paint)
 	m.ICustomGraphicControl.SetOnMouseEnter(m.enter)
 	m.ICustomGraphicControl.SetOnMouseLeave(m.leave)
