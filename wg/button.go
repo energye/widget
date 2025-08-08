@@ -26,16 +26,17 @@ type TButtonIcon struct {
 
 type TButton struct {
 	lcl.ICustomGraphicControl
-	startColor    colors.TColor  // 按钮起始渐变颜色
-	endColor      colors.TColor  // 按钮结束渐变颜色
-	activeColor   float32        // 按钮激活颜色深度 0.0 ~ 1.0
-	alpha         byte           // 透明度 0 ~ 255
-	radius        int32          // 圆角度
-	isEnter       bool           // 鼠标是否移入
-	isDown        bool           // 鼠标是否按下
-	RoundedCorner RoundedCorners // 按钮圆角方向，默认四角
-	Icons         []TButtonIcon  // 按钮上的图标
-	// 事件
+	startColor               colors.TColor  // 按钮起始渐变颜色
+	endColor                 colors.TColor  // 按钮结束渐变颜色
+	activeColor              float32        // 按钮激活颜色深度 0.0 ~ 1.0
+	alpha                    byte           // 透明度 0 ~ 255
+	radius                   int32          // 圆角度
+	isEnter                  bool           // 鼠标是否移入
+	isDown                   bool           // 鼠标是否按下
+	RoundedCorner            RoundedCorners // 按钮圆角方向，默认四角
+	Icons                    []TButtonIcon  // 按钮上的图标
+	TextOffSetX, TextOffSetY int32          // 文本显示偏移位置
+	// 用户事件
 	onPaint      lcl.TNotifyEvent
 	onMouseEnter lcl.TNotifyEvent
 	onMouseLeave lcl.TNotifyEvent
@@ -156,8 +157,8 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 
 	// 计算文字位置
 	textSize := canvas.TextExtentWithUnicodestring(text)
-	textX := rect.Left + (rect.Width()-textSize.Cx)/2
-	textY := rect.Top + (rect.Height()-textSize.Cy)/2
+	textX := rect.Left + m.TextOffSetX + (rect.Width()-textSize.Cx)/2
+	textY := rect.Top + m.TextOffSetY + (rect.Height()-textSize.Cy)/2
 
 	// 计算文字宽度截取
 	//textWidth := canvas.GetTextWidthWithUnicodestring(text)
