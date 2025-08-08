@@ -35,34 +35,53 @@ type TButton struct {
 	isDown        bool           // 鼠标是否按下
 	RoundedCorner RoundedCorners // 按钮圆角方向，默认四角
 	Icons         []TButtonIcon  // 按钮上的图标
+	// 事件
+	onPaint      lcl.TNotifyEvent
+	onMouseEnter lcl.TNotifyEvent
+	onMouseLeave lcl.TNotifyEvent
+	onMouseDown  lcl.TMouseEvent
+	onMouseUp    lcl.TMouseEvent
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
 	m := &TButton{ICustomGraphicControl: lcl.NewCustomGraphicControl(owner)}
 	m.SetWidth(120)
 	m.SetHeight(40)
-	//m.SetBevelOuter(types.BvNone)
 	m.SetParentBackground(true)
 	m.SetParentColor(true)
-	//m.SetDoubleBuffered(true)
-	//m.SetParentDoubleBuffered(true)
-	m.Font().SetSize(12)
-	m.Font().SetName("微软雅黑")
-	//m.Font().SetStyle(types.NewSet(types.FsBold))
-	cs := m.ControlStyle().Include(types.CsParentBackground)
 	m.Canvas().SetAntialiasingMode(types.AmOn)
-	m.SetControlStyle(cs)
+	m.SetControlStyle(m.ControlStyle().Include(types.CsParentBackground))
 	m.startColor = colors.ClBlue
 	m.endColor = colors.ClNavy
 	m.alpha = 180
 	m.radius = 15
-	m.SetOnPaint(m.paint)
-	m.SetOnMouseEnter(m.enter)
-	m.SetOnMouseLeave(m.leave)
-	m.SetOnMouseDown(m.down)
-	m.SetOnMouseUp(m.up)
+	m.ICustomGraphicControl.SetOnPaint(m.paint)
+	m.ICustomGraphicControl.SetOnMouseEnter(m.enter)
+	m.ICustomGraphicControl.SetOnMouseLeave(m.leave)
+	m.ICustomGraphicControl.SetOnMouseDown(m.down)
+	m.ICustomGraphicControl.SetOnMouseUp(m.up)
 	m.RoundedCorner = types.NewSet(RcLeftTop, RcRightTop, RcLeftBottom, RcRightBottom)
 	return m
+}
+
+func (m *TButton) SetOnPaint(fn lcl.TNotifyEvent) {
+	m.onPaint = fn
+}
+
+func (m *TButton) SetOnMouseDown(fn lcl.TMouseEvent) {
+	m.onMouseDown = fn
+}
+
+func (m *TButton) SetOnMouseUp(fn lcl.TMouseEvent) {
+	m.onMouseUp = fn
+}
+
+func (m *TButton) SetOnMouseEnter(fn lcl.TNotifyEvent) {
+	m.onMouseEnter = fn
+}
+
+func (m *TButton) SetOnMouseLeave(fn lcl.TNotifyEvent) {
+	m.onMouseLeave = fn
 }
 
 func (m *TButton) SetStartColor(color colors.TColor) {
@@ -84,21 +103,33 @@ func (m *TButton) SetRadius(radius int32) {
 func (m *TButton) enter(sender lcl.IObject) {
 	m.isEnter = true
 	m.Invalidate()
+	if m.onMouseEnter != nil {
+		m.onMouseEnter(sender)
+	}
 }
 
 func (m *TButton) leave(sender lcl.IObject) {
 	m.isEnter = false
 	m.Invalidate()
+	if m.onMouseLeave != nil {
+		m.onMouseLeave(sender)
+	}
 }
 
 func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
 	m.isDown = true
 	m.Invalidate()
+	if m.onMouseDown != nil {
+		m.onMouseDown(sender, button, shift, X, Y)
+	}
 }
 
 func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
 	m.isDown = false
 	m.Invalidate()
+	if m.onMouseUp != nil {
+		m.onMouseUp(sender, button, shift, X, Y)
+	}
 }
 
 func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect) {
@@ -179,6 +210,9 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 
 func (m *TButton) paint(sender lcl.IObject) {
 	m.drawRoundedGradientButton(m.Canvas(), m.ClientRect())
+	if m.onPaint != nil {
+		m.onPaint(sender)
+	}
 }
 
 func darkenColor(color types.TColor, factor float64) types.TColor {
