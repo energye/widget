@@ -7,25 +7,45 @@ import (
 	"math"
 )
 
+type RoundedCorner = int32
+
+const (
+	RcLeftTop RoundedCorner = iota
+	RcRightTop
+	RcLeftBottom
+	RcRightBottom
+)
+
+type RoundedCorners = types.TSet
+
+type TButtonIcon struct {
+	Icon []byte
+	X    int32
+	Y    int32
+}
+
 type TButton struct {
-	lcl.IPanel
-	startColor colors.TColor
-	endColor   colors.TColor
-	alpha      byte
-	radius     int32
-	isEnter    bool
-	isDown     bool
+	lcl.ICustomGraphicControl
+	startColor    colors.TColor  // 按钮起始渐变颜色
+	endColor      colors.TColor  // 按钮结束渐变颜色
+	activeColor   float32        // 按钮激活颜色深度 0.0 ~ 1.0
+	alpha         byte           // 透明度 0 ~ 255
+	radius        int32          // 圆角度
+	isEnter       bool           // 鼠标是否移入
+	isDown        bool           // 鼠标是否按下
+	RoundedCorner RoundedCorners // 按钮圆角方向，默认四角
+	Icons         []TButtonIcon  // 按钮上的图标
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
-	m := &TButton{IPanel: lcl.NewPanel(owner)}
+	m := &TButton{ICustomGraphicControl: lcl.NewCustomGraphicControl(owner)}
 	m.SetWidth(120)
 	m.SetHeight(40)
-	m.SetBevelOuter(types.BvNone)
+	//m.SetBevelOuter(types.BvNone)
 	m.SetParentBackground(true)
 	m.SetParentColor(true)
-	m.SetDoubleBuffered(true)
-	m.SetParentDoubleBuffered(true)
+	//m.SetDoubleBuffered(true)
+	//m.SetParentDoubleBuffered(true)
 	m.Font().SetSize(12)
 	m.Font().SetName("微软雅黑")
 	//m.Font().SetStyle(types.NewSet(types.FsBold))
@@ -41,6 +61,7 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.SetOnMouseLeave(m.leave)
 	m.SetOnMouseDown(m.down)
 	m.SetOnMouseUp(m.up)
+	m.RoundedCorner = types.NewSet(RcLeftTop, RcRightTop, RcLeftBottom, RcRightBottom)
 	return m
 }
 
@@ -119,7 +140,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 		curColor := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
 		// 注意：Alpha会在内循环中为每个像素单独设置
 		for x := 0; x < int(imgWidth); x++ {
-			alphaFactor := calculateRoundedAlpha(int32(x), int32(y), imgWidth, imgHeight, m.radius)
+			alphaFactor := m.calculateRoundedAlpha(int32(x), int32(y), imgWidth, imgHeight, m.radius)
 			actualAlpha := round(float64(m.alpha) * float64(alphaFactor))
 			curColor.Alpha = uint16(actualAlpha) << 8
 			img.SetColors(int32(x), int32(y), curColor)
@@ -143,11 +164,16 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	textX := rect.Left + (rect.Width()-textSize.Cx)/2
 	textY := rect.Top + (rect.Height()-textSize.Cy)/2
 
+	// 计算文字宽度截取
+	//textWidth := canvas.GetTextWidthWithUnicodestring(text)
+	//fmt.Println("text:", text, textWidth, textWidth/int32(len(text)))
+
 	// 绘制文字阴影（增强可读性）
-	//font.SetColor(colors.ClBlack)
+	//canvas.FontToFont().SetColor(colors.ClBlack)
 	//canvas.TextOutWithIntX2Unicodestring(textX+1, textY+1, text)
 
 	// 绘制主文字
+	//canvas.FontToFont().SetColor(colors.ClWhite)
 	canvas.TextOutWithIntX2Unicodestring(textX, textY, text)
 }
 
@@ -159,11 +185,6 @@ func darkenColor(color types.TColor, factor float64) types.TColor {
 	R := colors.Red(color)
 	G := colors.Green(color)
 	B := colors.Blue(color)
-
-	//incFactor := 1.0 - factor
-	//R = byte(round(float64(R)*incFactor + 255*factor))
-	//G = byte(round(float64(G)*incFactor + 255*factor))
-	//B = byte(round(float64(B)*incFactor + 255*factor))
 
 	R = byte(round(float64(R) * (1.0 - factor)))
 	G = byte(round(float64(G) * (1.0 - factor)))
@@ -184,27 +205,27 @@ func sqrt(v float64) float32 {
 }
 
 // 计算圆角矩形中某点的抗锯齿透明度因子 (0.0 ~ 1.0)
-func calculateRoundedAlpha(x, y, width, height, radius int32) float32 {
+func (m *TButton) calculateRoundedAlpha(x, y, width, height, radius int32) float32 {
 	var (
 		cornerX, cornerY int32
 		d                float32
 	)
 	// 左上角区域
-	if x < radius && y < radius {
+	if m.RoundedCorner.In(RcLeftTop) && x < radius && y < radius {
 		cornerX = radius
 		cornerY = radius
 		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
-	} else if x >= width-radius && y < radius {
+	} else if m.RoundedCorner.In(RcRightTop) && x >= width-radius && y < radius {
 		// 右上角区域
 		cornerX = width - radius - 1
 		cornerY = radius
 		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
-	} else if x < radius && y >= height-radius {
+	} else if m.RoundedCorner.In(RcLeftBottom) && x < radius && y >= height-radius {
 		// 左下角区域
 		cornerX = radius
 		cornerY = height - radius - 1
 		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
-	} else if x >= width-radius && y >= height-radius {
+	} else if m.RoundedCorner.In(RcRightBottom) && x >= width-radius && y >= height-radius {
 		// 右下角区域
 		cornerX = width - radius - 1
 		cornerY = height - radius - 1
