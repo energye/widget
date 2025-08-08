@@ -1,7 +1,6 @@
 package wg
 
 import (
-	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
@@ -38,6 +37,7 @@ type TButton struct {
 	iconCloseHighlight lcl.IPicture // 按钮关闭图标 高亮
 	isEnterClose       bool         // 鼠标是否移入关闭图标
 	// 用户事件
+	onCloseClick lcl.TNotifyEvent
 	onPaint      lcl.TNotifyEvent
 	onMouseEnter lcl.TNotifyEvent
 	onMouseLeave lcl.TNotifyEvent
@@ -115,7 +115,9 @@ func (m *TButton) leave(sender lcl.IObject) {
 
 func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
 	if m.isCloseArea(X, Y) {
-		fmt.Println("关闭X点击")
+		if m.onCloseClick != nil {
+			m.onCloseClick(sender)
+		}
 	} else {
 		m.isDown = true
 		m.Invalidate()
@@ -237,6 +239,9 @@ func (m *TButton) paint(sender lcl.IObject) {
 	if m.onPaint != nil {
 		m.onPaint(sender)
 	}
+}
+func (m *TButton) SetOnCloseClick(fn lcl.TNotifyEvent) {
+	m.onCloseClick = fn
 }
 
 func (m *TButton) SetOnPaint(fn lcl.TNotifyEvent) {
