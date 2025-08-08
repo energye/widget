@@ -64,42 +64,6 @@ func NewButton(owner lcl.IComponent) *TButton {
 	return m
 }
 
-func (m *TButton) SetOnPaint(fn lcl.TNotifyEvent) {
-	m.onPaint = fn
-}
-
-func (m *TButton) SetOnMouseDown(fn lcl.TMouseEvent) {
-	m.onMouseDown = fn
-}
-
-func (m *TButton) SetOnMouseUp(fn lcl.TMouseEvent) {
-	m.onMouseUp = fn
-}
-
-func (m *TButton) SetOnMouseEnter(fn lcl.TNotifyEvent) {
-	m.onMouseEnter = fn
-}
-
-func (m *TButton) SetOnMouseLeave(fn lcl.TNotifyEvent) {
-	m.onMouseLeave = fn
-}
-
-func (m *TButton) SetStartColor(color colors.TColor) {
-	m.startColor = color
-}
-
-func (m *TButton) SetEndColor(color colors.TColor) {
-	m.endColor = color
-}
-
-func (m *TButton) SetAlpha(alpha byte) {
-	m.alpha = alpha
-}
-
-func (m *TButton) SetRadius(radius int32) {
-	m.radius = radius
-}
-
 func (m *TButton) enter(sender lcl.IObject) {
 	m.isEnter = true
 	m.Invalidate()
@@ -215,27 +179,40 @@ func (m *TButton) paint(sender lcl.IObject) {
 	}
 }
 
-func darkenColor(color types.TColor, factor float64) types.TColor {
-	R := colors.Red(color)
-	G := colors.Green(color)
-	B := colors.Blue(color)
-
-	R = byte(round(float64(R) * (1.0 - factor)))
-	G = byte(round(float64(G) * (1.0 - factor)))
-	B = byte(round(float64(B) * (1.0 - factor)))
-	return colors.RGBToColor(R, G, B)
+func (m *TButton) SetOnPaint(fn lcl.TNotifyEvent) {
+	m.onPaint = fn
 }
 
-func round(v float64) float64 {
-	return math.Round(v)
+func (m *TButton) SetOnMouseDown(fn lcl.TMouseEvent) {
+	m.onMouseDown = fn
 }
 
-func sqr(x int32) int32 {
-	return x * x
+func (m *TButton) SetOnMouseUp(fn lcl.TMouseEvent) {
+	m.onMouseUp = fn
 }
 
-func sqrt(v float64) float32 {
-	return float32(math.Sqrt(v))
+func (m *TButton) SetOnMouseEnter(fn lcl.TNotifyEvent) {
+	m.onMouseEnter = fn
+}
+
+func (m *TButton) SetOnMouseLeave(fn lcl.TNotifyEvent) {
+	m.onMouseLeave = fn
+}
+
+func (m *TButton) SetStartColor(color colors.TColor) {
+	m.startColor = color
+}
+
+func (m *TButton) SetEndColor(color colors.TColor) {
+	m.endColor = color
+}
+
+func (m *TButton) SetAlpha(alpha byte) {
+	m.alpha = alpha
+}
+
+func (m *TButton) SetRadius(radius int32) {
+	m.radius = radius
 }
 
 // 计算圆角矩形中某点的抗锯齿透明度因子 (0.0 ~ 1.0)
@@ -276,4 +253,27 @@ func (m *TButton) calculateRoundedAlpha(x, y, width, height, radius int32) float
 		// 在过渡区域（1像素宽度），线性插值
 		return 1.0 - (d-(float32(radius)-1.0))/2.0
 	}
+}
+
+func darkenColor(color types.TColor, factor float64) types.TColor {
+	R := colors.Red(color)
+	G := colors.Green(color)
+	B := colors.Blue(color)
+
+	R = byte(round(float64(R) * (1.0 - factor)))
+	G = byte(round(float64(G) * (1.0 - factor)))
+	B = byte(round(float64(B) * (1.0 - factor)))
+	return colors.RGBToColor(R, G, B)
+}
+
+func round(v float64) float64 {
+	return math.Round(v)
+}
+
+func sqr(x int32) int32 {
+	return x * x
+}
+
+func sqrt(v float64) float32 {
+	return float32(math.Sqrt(v))
 }
