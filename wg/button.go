@@ -1,6 +1,7 @@
 package wg
 
 import (
+	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
@@ -36,6 +37,7 @@ type TButton struct {
 	iconClose          lcl.IPicture // 按钮关闭图标
 	iconCloseHighlight lcl.IPicture // 按钮关闭图标 高亮
 	isEnterClose       bool         // 鼠标是否移入关闭图标
+	iconBackground     lcl.IPicture // 按钮图标
 	// 用户事件
 	onCloseClick lcl.TNotifyEvent
 	onPaint      lcl.TNotifyEvent
@@ -70,6 +72,12 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.iconFavorite.SetOnChange(m.iconChange)
 	m.iconClose.SetOnChange(m.iconChange)
 	m.iconCloseHighlight.SetOnChange(m.iconChange)
+	m.SetOnDestroy(func() {
+		fmt.Println("释放资源")
+		m.iconFavorite.Free()
+		m.iconClose.Free()
+		m.iconCloseHighlight.Free()
+	})
 	return m
 }
 
@@ -334,8 +342,8 @@ func (m *TButton) calculateRoundedAlpha(x, y, width, height, radius int32) float
 		return 1.0
 	}
 
-	// 抗锯齿过渡区域（2像素宽度）
-	const transition = 2.0
+	// 抗锯齿过渡区域（像素宽度）
+	const transition = 1.0
 	innerRadius := float32(radius) - transition
 
 	// 完全在圆角内
