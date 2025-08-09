@@ -112,6 +112,7 @@ func (m *TButton) isCloseArea(X int32, Y int32) bool {
 }
 
 func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y int32) {
+	lcl.Screen.SetCursor(types.CrDefault)
 	if m.IsDisable {
 		return
 	}
