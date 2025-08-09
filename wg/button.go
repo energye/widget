@@ -37,7 +37,7 @@ type TButton struct {
 	iconClose          lcl.IPicture // 按钮关闭图标
 	iconCloseHighlight lcl.IPicture // 按钮关闭图标 高亮
 	isEnterClose       bool         // 鼠标是否移入关闭图标
-	iconBackground     lcl.IPicture // 按钮图标
+	icon               lcl.IPicture // 按钮图标
 	// 用户事件
 	onCloseClick lcl.TNotifyEvent
 	onPaint      lcl.TNotifyEvent
@@ -45,6 +45,8 @@ type TButton struct {
 	onMouseLeave lcl.TNotifyEvent
 	onMouseDown  lcl.TMouseEvent
 	onMouseUp    lcl.TMouseEvent
+	// 是否禁用
+	IsDisable bool
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -69,23 +71,32 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.iconFavorite = lcl.NewPicture()
 	m.iconClose = lcl.NewPicture()
 	m.iconCloseHighlight = lcl.NewPicture()
+	m.icon = lcl.NewPicture()
 	m.iconFavorite.SetOnChange(m.iconChange)
 	m.iconClose.SetOnChange(m.iconChange)
 	m.iconCloseHighlight.SetOnChange(m.iconChange)
+	m.icon.SetOnChange(m.iconChange)
 	m.SetOnDestroy(func() {
 		fmt.Println("释放资源")
 		m.iconFavorite.Free()
 		m.iconClose.Free()
 		m.iconCloseHighlight.Free()
+		m.icon.Free()
 	})
 	return m
 }
 
 func (m *TButton) iconChange(sender lcl.IObject) {
+	if m.IsDisable {
+		return
+	}
 	m.Invalidate()
 }
 
 func (m *TButton) enter(sender lcl.IObject) {
+	if m.IsDisable {
+		return
+	}
 	m.isEnter = true
 	m.Invalidate()
 	if m.onMouseEnter != nil {
@@ -101,6 +112,9 @@ func (m *TButton) isCloseArea(X int32, Y int32) bool {
 }
 
 func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y int32) {
+	if m.IsDisable {
+		return
+	}
 	if m.isCloseArea(X, Y) {
 		if !m.isEnterClose {
 			m.isEnterClose = true
@@ -113,6 +127,9 @@ func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y i
 }
 
 func (m *TButton) leave(sender lcl.IObject) {
+	if m.IsDisable {
+		return
+	}
 	m.isEnter = false
 	m.isEnterClose = false
 	m.Invalidate()
@@ -122,6 +139,9 @@ func (m *TButton) leave(sender lcl.IObject) {
 }
 
 func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+	if m.IsDisable {
+		return
+	}
 	if m.isCloseArea(X, Y) {
 		if m.onCloseClick != nil {
 			m.onCloseClick(sender)
@@ -136,6 +156,9 @@ func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift type
 }
 
 func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+	if m.IsDisable {
+		return
+	}
 	m.isDown = false
 	m.Invalidate()
 	if m.onMouseUp != nil {
@@ -218,10 +241,10 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	//canvas.FontToFont().SetColor(colors.ClWhite)
 	canvas.TextOutWithIntX2Unicodestring(textX, textY, text)
 
-	// 绘制图标 favorite
+	// 绘制图标 favorite 在左
 	favY := rect.Height()/2 - m.iconFavorite.Height()/2
 	canvas.DrawWithIntX2Graphic(10, favY, m.iconFavorite.Graphic())
-	// 绘制图标 close
+	// 绘制图标 close 在右
 	iconClose := m.iconClose
 	if m.isEnterClose {
 		iconClose = m.iconCloseHighlight
@@ -229,6 +252,16 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	closeX := rect.Width() - iconClose.Width() - 10
 	closeY := rect.Height()/2 - iconClose.Height()/2
 	canvas.DrawWithIntX2Graphic(closeX, closeY, iconClose.Graphic())
+
+	// 绘制图标 icon, 在中间位置
+	iconW, iconH := m.icon.Width(), m.icon.Height()
+	iconX := rect.Left + (rect.Width()-iconW)/2
+	iconY := rect.Top + (rect.Height()-iconH)/2
+	canvas.DrawWithIntX2Graphic(iconX, iconY, m.icon.Graphic())
+}
+
+func (m *TButton) SetIcon(filePath string) {
+	m.icon.LoadFromFile(filePath)
 }
 
 func (m *TButton) SetIconFavorite(filePath string) {
