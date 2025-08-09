@@ -230,8 +230,15 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	textY := rect.Top + m.TextOffSetY + (rect.Height()-textSize.Cy)/2
 
 	// 计算文字宽度截取
-	//textWidth := canvas.GetTextWidthWithUnicodestring(text)
-	//fmt.Println("text:", text, textWidth, textWidth/int32(len(text)))
+	if len(text) > 0 && m.iconFavorite.Width() > 0 { // 当有文本时才计算截取
+		//textWidth := canvas.GetTextWidthWithUnicodestring(text)
+		//fmt.Println("text:", text, textWidth, textWidth/int32(len(text)), m.iconFavorite.Width())
+		leftIconSize := int32(10 + 20) // 边侧图标的距离， left 10, icon 宽高 20
+		if textX <= leftIconSize {
+			textX = leftIconSize
+		}
+
+	}
 
 	// 绘制文字阴影（增强可读性）
 	//canvas.FontToFont().SetColor(colors.ClBlack)
