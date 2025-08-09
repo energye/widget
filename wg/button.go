@@ -321,6 +321,10 @@ func (m *TButton) SetRadius(radius int32) {
 	m.radius = radius
 }
 
+func (m *TButton) Free() {
+	m.ICustomGraphicControl.Free()
+}
+
 // 计算圆角矩形中某点的抗锯齿透明度因子 (0.0 ~ 1.0)
 func (m *TButton) calculateRoundedAlpha(x, y, width, height, radius int32) float32 {
 	// 计算实际可用最大半径（不超过尺寸限制）
