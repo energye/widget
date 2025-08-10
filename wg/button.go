@@ -225,21 +225,50 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	brush := canvas.BrushToBrush()
 	brush.SetStyle(types.BsClear)
 
+	// 计算左右图标占用的空间
+	leftArea := int32(0)
+	if m.iconFavorite.Width() > 0 {
+		leftArea = 10 + m.iconFavorite.Width() + 10 // 左边距10 + 图标宽度 + 图标与文本间距10
+	}
+
+	rightArea := int32(0)
+	if m.iconClose.Width() > 0 {
+		rightArea = 10 + m.iconClose.Width() + 10 // 右边距10 + 图标宽度 + 图标与文本间距10
+	}
+
+	// 计算文本可用宽度
+	availWidth := rect.Width() - leftArea - rightArea
+	if availWidth < 0 {
+		availWidth = 0
+	}
+
+	// 截断文本（如果需要）
+	if len(text) > 0 {
+		text = truncateText(canvas, text, availWidth)
+	}
+
 	// 计算文字位置
 	textSize := canvas.TextExtentWithUnicodestring(text)
 	textX := rect.Left + m.TextOffSetX + (rect.Width()-textSize.Cx)/2
 	textY := rect.Top + m.TextOffSetY + (rect.Height()-textSize.Cy)/2
 
 	// 计算文字宽度截取
-	if len(text) > 0 && m.iconFavorite.Width() > 0 { // 当有文本时才计算截取
-		//textWidth := canvas.GetTextWidthWithUnicodestring(text)
-		//fmt.Println("text:", text, textWidth, textWidth/int32(len(text)), m.iconFavorite.Width())
-		leftIconSize := int32(10 + 20) // 边侧图标的距离， left 10, icon 宽高 20
-		if textX <= leftIconSize {
-			textX = leftIconSize
-		}
-
-	}
+	//if len(text) > 0 && m.iconFavorite.Width() > 0 { // 当有文本时才计算截取
+	//	leftIconSize := int32(10 + 20) // 边侧图标的距离， left 10, icon 宽高 20
+	//	if textX <= leftIconSize {
+	//		textX = leftIconSize
+	//	}
+	//	// 计算文本宽度是否超出当前按钮宽
+	//	//textWidth := canvas.GetTextWidthWithUnicodestring(text)
+	//	//btnMaxWidth := rect.Width() - 20 - 10 - 40 // 左图标宽 + 偏移 + 右图标宽+偏移
+	//	//fmt.Println("文本宽:", textWidth, "字数:", len(text), "显示最大宽:", btnMaxWidth)
+	//	//if textWidth > btnMaxWidth {
+	//	//	// 截取文本数
+	//	//	avg := textWidth / int32(len(text))
+	//	//	textCount := btnMaxWidth / avg
+	//	//	fmt.Println("文本宽:", textWidth, "字宽度:", avg, "文本个数:", textCount)
+	//	//}
+	//}
 
 	// 绘制文字阴影（增强可读性）
 	//canvas.FontToFont().SetColor(colors.ClBlack)
@@ -433,4 +462,31 @@ func sqr(x int32) int32 {
 
 func sqrt(v float64) float32 {
 	return float32(math.Sqrt(v))
+}
+
+// 文本截断函数（添加在文件末尾）
+func truncateText(canvas lcl.ICanvas, text string, maxWidth int32) string {
+	if maxWidth <= 0 {
+		return ""
+	}
+	ellipsis := "..."
+	ellipsisWidth := canvas.TextWidthWithUnicodestring(ellipsis)
+	// 如果连省略号都显示不下
+	if ellipsisWidth > maxWidth {
+		return ""
+	}
+	// 如果文本本身宽度小于可用宽度
+	textWidth := canvas.TextWidthWithUnicodestring(text)
+	if textWidth <= maxWidth {
+		return text
+	}
+	// 逐个字符尝试，找到合适的截断位置
+	runes := []rune(text)
+	for i := len(runes) - 1; i > 0; i-- {
+		truncated := string(runes[:i]) + ellipsis
+		if canvas.TextWidthWithUnicodestring(truncated) <= maxWidth {
+			return truncated
+		}
+	}
+	return ellipsis
 }
