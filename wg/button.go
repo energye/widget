@@ -176,11 +176,11 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	startColor := m.startColor
 	endColor := m.endColor
 
-	if m.isEnter {
+	if !m.IsDisable && m.isEnter {
 		startColor = darkenColor(startColor, 0.1)
 		endColor = darkenColor(endColor, 0.1)
 	}
-	if m.isDown {
+	if !m.IsDisable && m.isDown {
 		startColor = darkenColor(startColor, 0.2)
 		endColor = darkenColor(endColor, 0.2)
 	}
