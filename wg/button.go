@@ -302,7 +302,31 @@ func (m *TButton) SetIcon(filePath string) {
 }
 
 func (m *TButton) SetIconFavorite(filePath string) {
-	m.iconFavorite.LoadFromFile(filePath)
+	//m.iconFavorite.LoadFromFile(filePath)
+
+	if ext := strings.ToLower(filepath.Ext(filePath)); ext == ".png" {
+		// png 默认，需要自己处理图标大小
+		m.iconFavorite.LoadFromFile(filePath)
+	} else if ext == ".ico" {
+		// ico 图标
+		ico := lcl.NewIcon()
+		defer ico.Free()
+		ico.LoadFromFile(filePath)
+		// 缩放处理
+		icoBmp := lcl.NewBitmap()
+		defer icoBmp.Free()
+		icoBmp.SetSize(ico.Width(), ico.Height())
+		icoBmp.Canvas().DrawWithIntX2Graphic(0, 0, ico)
+
+		scaledBitmap := lcl.NewBitmap()
+		defer scaledBitmap.Free()
+		scaledBitmap.SetSize(16, 16)
+		scaledBitmap.Canvas().SetAntialiasingMode(types.AmOn)
+		scaledBitmap.Canvas().StretchDrawWithRectGraphic(types.Rect(0, 0, 16, 16), icoBmp)
+
+		// 设置到按钮图标
+		m.iconFavorite.Assign(scaledBitmap)
+	}
 }
 
 func (m *TButton) SetIconClose(filePath string) {
