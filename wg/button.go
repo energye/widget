@@ -1,7 +1,6 @@
 package wg
 
 import (
-	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
@@ -50,6 +49,9 @@ type TButton struct {
 	// 缩放
 	IsScaled                  bool
 	ScaledWidth, ScaledHeight int32
+	// img pool
+	imgPool     lcl.ILazIntfImage
+	imgBMapPool lcl.IBitmap
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -81,12 +83,32 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.iconClose.SetOnChange(m.iconChange)
 	m.iconCloseHighlight.SetOnChange(m.iconChange)
 	m.icon.SetOnChange(m.iconChange)
+	// 创建图像对象
+	m.imgPool = lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha))
+	m.imgBMapPool = lcl.NewBitmap()
+	m.imgBMapPool.SetPixelFormat(types.Pf32bit)
+	// 销毁事件
 	m.SetOnDestroy(func() {
-		fmt.Println("释放资源")
+		//fmt.Println("Graphic Button 释放资源")
+		// 清空事件
+		m.ICustomGraphicControl.SetOnPaint(nil)
+		m.ICustomGraphicControl.SetOnMouseEnter(nil)
+		m.ICustomGraphicControl.SetOnMouseLeave(nil)
+		m.ICustomGraphicControl.SetOnMouseDown(nil)
+		m.ICustomGraphicControl.SetOnMouseUp(nil)
+		m.ICustomGraphicControl.SetOnMouseMove(nil)
+		m.iconFavorite.SetOnChange(nil)
+		m.iconClose.SetOnChange(nil)
+		m.iconCloseHighlight.SetOnChange(nil)
+		m.icon.SetOnChange(nil)
+		m.SetOnDestroy(nil)
+		// 释放持有资源
 		m.iconFavorite.Free()
 		m.iconClose.Free()
 		m.iconCloseHighlight.Free()
 		m.icon.Free()
+		m.imgPool.Free()
+		m.imgBMapPool.Free()
 	})
 	return m
 }
@@ -173,10 +195,16 @@ func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.
 }
 
 func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect) {
+	img := m.imgPool
+	if img.Width() != rect.Width() || img.Height() != rect.Height() {
+		img.SetSize(rect.Width(), rect.Height())
+	}
+	tempBMap := m.imgBMapPool
+	if tempBMap.Width() != rect.Width() || tempBMap.Height() != rect.Height() {
+		tempBMap.SetSize(rect.Width(), rect.Height())
+	}
+
 	text := m.Caption()
-	// 创建图像对象
-	img := lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(rect.Width(), rect.Height(), types.NewSet(types.RiqfRGB, types.RiqfAlpha))
-	defer img.Free()
 
 	startColor := m.startColor
 	endColor := m.endColor
@@ -218,13 +246,9 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 		}
 	}
 	// 创建临时位图并加载图像数据
-	tempBMap := lcl.NewBitmap()
-	tempBMap.SetSize(rect.Width(), rect.Height())
-	tempBMap.SetPixelFormat(types.Pf32bit)
 	tempBMap.LoadFromIntfImage(img)
 	// 绘制到目标画布
 	canvas.DrawWithIntX2Graphic(rect.Left, rect.Top, tempBMap)
-	defer tempBMap.Free()
 
 	// 绘制按钮文字（在原始画布上绘制，确保文字不透明）
 	brush := canvas.BrushToBrush()
