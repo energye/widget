@@ -155,11 +155,11 @@ func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y i
 }
 
 func (m *TButton) leave(sender lcl.IObject) {
+	m.isEnter = false
+	m.isEnterClose = false
 	if m.IsDisable {
 		return
 	}
-	m.isEnter = false
-	m.isEnterClose = false
 	m.Invalidate()
 	if m.onMouseLeave != nil {
 		m.onMouseLeave(sender)
