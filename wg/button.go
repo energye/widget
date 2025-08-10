@@ -47,6 +47,9 @@ type TButton struct {
 	onMouseUp    lcl.TMouseEvent
 	// 是否禁用
 	IsDisable bool
+	// 缩放
+	IsScaled                  bool
+	ScaledWidth, ScaledHeight int32
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -61,6 +64,8 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.endColor = colors.ClNavy
 	m.alpha = 180
 	m.radius = 10
+	m.IsScaled = false
+	m.ScaledWidth, m.ScaledHeight = 120/2, 40/2
 	m.ICustomGraphicControl.SetOnPaint(m.paint)
 	m.ICustomGraphicControl.SetOnMouseEnter(m.enter)
 	m.ICustomGraphicControl.SetOnMouseLeave(m.leave)
@@ -252,24 +257,6 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	textX := rect.Left + m.TextOffSetX + (rect.Width()-textSize.Cx)/2
 	textY := rect.Top + m.TextOffSetY + (rect.Height()-textSize.Cy)/2
 
-	// 计算文字宽度截取
-	//if len(text) > 0 && m.iconFavorite.Width() > 0 { // 当有文本时才计算截取
-	//	leftIconSize := int32(10 + 20) // 边侧图标的距离， left 10, icon 宽高 20
-	//	if textX <= leftIconSize {
-	//		textX = leftIconSize
-	//	}
-	//	// 计算文本宽度是否超出当前按钮宽
-	//	//textWidth := canvas.GetTextWidthWithUnicodestring(text)
-	//	//btnMaxWidth := rect.Width() - 20 - 10 - 40 // 左图标宽 + 偏移 + 右图标宽+偏移
-	//	//fmt.Println("文本宽:", textWidth, "字数:", len(text), "显示最大宽:", btnMaxWidth)
-	//	//if textWidth > btnMaxWidth {
-	//	//	// 截取文本数
-	//	//	avg := textWidth / int32(len(text))
-	//	//	textCount := btnMaxWidth / avg
-	//	//	fmt.Println("文本宽:", textWidth, "字宽度:", avg, "文本个数:", textCount)
-	//	//}
-	//}
-
 	// 绘制文字阴影（增强可读性）
 	//canvas.FontToFont().SetColor(colors.ClBlack)
 	//canvas.TextOutWithIntX2Unicodestring(textX+1, textY+1, text)
@@ -298,41 +285,79 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 }
 
 func (m *TButton) SetIcon(filePath string) {
-	m.icon.LoadFromFile(filePath)
+	if !m.IsScaled {
+		m.icon.LoadFromFile(filePath)
+		return
+	}
+	m.scaled(filePath, m.icon)
 }
 
 func (m *TButton) SetIconFavorite(filePath string) {
-	//m.iconFavorite.LoadFromFile(filePath)
-	if ext := strings.ToLower(filepath.Ext(filePath)); ext == ".png" {
-		// png 默认，需要自己处理图标大小
+	if !m.IsScaled {
 		m.iconFavorite.LoadFromFile(filePath)
+		return
+	}
+	m.scaled(filePath, m.iconFavorite)
+}
+
+func (m *TButton) SetIconClose(filePath string) {
+	path, name := filepath.Split(filePath)
+	ns := strings.Split(name, ".")
+	enterFilePath := filepath.Join(path, ns[0]+"_enter.png")
+	if !m.IsScaled {
+		m.iconClose.LoadFromFile(filePath)
+		m.iconCloseHighlight.LoadFromFile(enterFilePath)
+		return
+	}
+	m.scaled(filePath, m.iconClose)
+	m.scaled(enterFilePath, m.iconCloseHighlight)
+}
+
+func (m *TButton) scaled(filePath string, pic lcl.IPicture) {
+	if ext := strings.ToLower(filepath.Ext(filePath)); ext == ".png" {
+		// png
+		// 缩放处理
+		icoPng := lcl.NewPicture()
+		defer icoPng.Free()
+		icoPng.LoadFromFile(filePath)
+
+		icoBmp := lcl.NewBitmap()
+		defer icoBmp.Free()
+		icoBmp.SetPixelFormat(types.Pf32bit)
+		icoBmp.SetSize(icoPng.Width(), icoPng.Height())
+		icoBmp.Canvas().DrawWithIntX2Graphic(0, 0, icoPng.Graphic())
+
+		scaledBitmap := lcl.NewBitmap()
+		defer scaledBitmap.Free()
+		scaledBitmap.SetPixelFormat(types.Pf32bit)
+		// 缩放
+		scaledBitmap.SetSize(m.ScaledWidth, m.ScaledHeight)
+		scaledBitmap.Canvas().SetAntialiasingMode(types.AmOn)
+		scaledBitmap.Canvas().StretchDrawWithRectGraphic(types.Rect(0, 0, m.ScaledWidth, m.ScaledHeight), icoBmp)
+
+		pic.Assign(scaledBitmap)
 	} else if ext == ".ico" {
-		// ico 图标
+		// ico
+		// 缩放处理
 		ico := lcl.NewIcon()
 		defer ico.Free()
 		ico.LoadFromFile(filePath)
-		// 缩放处理
 		icoBmp := lcl.NewBitmap()
 		defer icoBmp.Free()
+		icoBmp.SetPixelFormat(types.Pf32bit)
 		icoBmp.SetSize(ico.Width(), ico.Height())
 		icoBmp.Canvas().DrawWithIntX2Graphic(0, 0, ico)
 
 		scaledBitmap := lcl.NewBitmap()
 		defer scaledBitmap.Free()
-		scaledBitmap.SetSize(16, 16)
+		scaledBitmap.SetPixelFormat(types.Pf32bit)
+		// 缩放
+		scaledBitmap.SetSize(m.ScaledWidth, m.ScaledHeight)
 		scaledBitmap.Canvas().SetAntialiasingMode(types.AmOn)
-		scaledBitmap.Canvas().StretchDrawWithRectGraphic(types.Rect(0, 0, 16, 16), icoBmp)
+		scaledBitmap.Canvas().StretchDrawWithRectGraphic(types.Rect(0, 0, m.ScaledWidth, m.ScaledHeight), icoBmp)
 
-		// 设置到按钮图标
-		m.iconFavorite.Assign(scaledBitmap)
+		pic.Assign(scaledBitmap)
 	}
-}
-
-func (m *TButton) SetIconClose(filePath string) {
-	path, name := filepath.Split(filePath)
-	m.iconClose.LoadFromFile(filePath)
-	ns := strings.Split(name, ".")
-	m.iconCloseHighlight.LoadFromFile(filepath.Join(path, ns[0]+"_enter.png"))
 }
 
 func (m *TButton) paint(sender lcl.IObject) {
