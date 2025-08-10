@@ -303,7 +303,6 @@ func (m *TButton) SetIcon(filePath string) {
 
 func (m *TButton) SetIconFavorite(filePath string) {
 	//m.iconFavorite.LoadFromFile(filePath)
-
 	if ext := strings.ToLower(filepath.Ext(filePath)); ext == ".png" {
 		// png 默认，需要自己处理图标大小
 		m.iconFavorite.LoadFromFile(filePath)
