@@ -313,7 +313,7 @@ func (m *TButton) SetIcon(filePath string) {
 		m.icon.LoadFromFile(filePath)
 		return
 	}
-	m.scaled(filePath, m.icon)
+	//m.scaled(filePath, m.icon)
 }
 
 func (m *TButton) SetIconFavorite(filePath string) {
@@ -321,7 +321,7 @@ func (m *TButton) SetIconFavorite(filePath string) {
 		m.iconFavorite.LoadFromFile(filePath)
 		return
 	}
-	m.scaled(filePath, m.iconFavorite)
+	//m.scaled(filePath, m.iconFavorite)
 }
 
 func (m *TButton) SetIconClose(filePath string) {
@@ -333,56 +333,44 @@ func (m *TButton) SetIconClose(filePath string) {
 		m.iconCloseHighlight.LoadFromFile(enterFilePath)
 		return
 	}
-	m.scaled(filePath, m.iconClose)
-	m.scaled(enterFilePath, m.iconCloseHighlight)
+	//m.scaled(filePath, m.iconClose)
+	//m.scaled(enterFilePath, m.iconCloseHighlight)
 }
 
-func (m *TButton) scaled(filePath string, pic lcl.IPicture) {
-	if ext := strings.ToLower(filepath.Ext(filePath)); ext == ".png" {
-		// png
-		// 缩放处理
-		icoPng := lcl.NewPicture()
-		defer icoPng.Free()
-		icoPng.LoadFromFile(filePath)
-
-		icoBmp := lcl.NewBitmap()
-		defer icoBmp.Free()
-		icoBmp.SetPixelFormat(types.Pf32bit)
-		icoBmp.SetSize(icoPng.Width(), icoPng.Height())
-		icoBmp.Canvas().DrawWithIntX2Graphic(0, 0, icoPng.Graphic())
-
-		scaledBitmap := lcl.NewBitmap()
-		defer scaledBitmap.Free()
-		scaledBitmap.SetPixelFormat(types.Pf32bit)
-		// 缩放
-		scaledBitmap.SetSize(m.ScaledWidth, m.ScaledHeight)
-		scaledBitmap.Canvas().SetAntialiasingMode(types.AmOn)
-		scaledBitmap.Canvas().StretchDrawWithRectGraphic(types.Rect(0, 0, m.ScaledWidth, m.ScaledHeight), icoBmp)
-
-		pic.Assign(scaledBitmap)
-	} else if ext == ".ico" {
-		// ico
-		// 缩放处理
-		ico := lcl.NewIcon()
-		defer ico.Free()
-		ico.LoadFromFile(filePath)
-		icoBmp := lcl.NewBitmap()
-		defer icoBmp.Free()
-		icoBmp.SetPixelFormat(types.Pf32bit)
-		icoBmp.SetSize(ico.Width(), ico.Height())
-		icoBmp.Canvas().DrawWithIntX2Graphic(0, 0, ico)
-
-		scaledBitmap := lcl.NewBitmap()
-		defer scaledBitmap.Free()
-		scaledBitmap.SetPixelFormat(types.Pf32bit)
-		// 缩放
-		scaledBitmap.SetSize(m.ScaledWidth, m.ScaledHeight)
-		scaledBitmap.Canvas().SetAntialiasingMode(types.AmOn)
-		scaledBitmap.Canvas().StretchDrawWithRectGraphic(types.Rect(0, 0, m.ScaledWidth, m.ScaledHeight), icoBmp)
-
-		pic.Assign(scaledBitmap)
-	}
-}
+//func (m *TButton) scaled(filePath string, pic lcl.IPicture) {
+//	if ext := strings.ToLower(filepath.Ext(filePath)); ext == ".png" || ext == ".ico" {
+//		var srcGraphic lcl.IGraphic
+//		// 加载源图像
+//		if ext == ".png" {
+//			picObj := lcl.NewPicture()
+//			defer picObj.Free()
+//			picObj.LoadFromFile(filePath)
+//			srcGraphic = picObj.Graphic()
+//		} else { // .ico
+//			ico := lcl.NewIcon()
+//			defer ico.Free()
+//			ico.LoadFromFile(filePath)
+//			srcGraphic = ico
+//		}
+//
+//		// 缩放处理
+//
+//		icoBmp := lcl.NewBitmap()
+//		defer icoBmp.Free()
+//		icoBmp.SetPixelFormat(types.Pf32bit)
+//		icoBmp.SetSize(srcGraphic.Width(), srcGraphic.Height())
+//		icoBmp.Canvas().DrawWithIntX2Graphic(0, 0, srcGraphic)
+//
+//		scaledBitmap := lcl.NewBitmap()
+//		defer scaledBitmap.Free()
+//		scaledBitmap.SetPixelFormat(types.Pf32bit)
+//		scaledBitmap.SetSize(m.ScaledWidth, m.ScaledHeight)
+//		scaledBitmap.Canvas().SetAntialiasingMode(types.AmOn)
+//		scaledBitmap.Canvas().StretchDrawWithRectGraphic(types.Rect(0, 0, m.ScaledWidth, m.ScaledHeight), icoBmp)
+//
+//		pic.Assign(scaledBitmap)
+//	}
+//}
 
 func (m *TButton) paint(sender lcl.IObject) {
 	m.drawRoundedGradientButton(m.Canvas(), m.ClientRect())
