@@ -17,5 +17,13 @@ func NewInput(owner lcl.IComponent) *TInput {
 	m.SetParentColor(true)
 	m.Canvas().SetAntialiasingMode(types.AmOn)
 	m.SetControlStyle(m.ControlStyle().Include(types.CsParentBackground))
+	// 事件
+	m.ICustomGraphicControl.SetOnPaint(m.paint)
 	return m
+}
+
+func (m *TInput) paint(sender lcl.IObject) {
+	if !m.IsValid() {
+		return
+	}
 }

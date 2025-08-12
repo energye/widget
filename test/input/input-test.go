@@ -1,0 +1,70 @@
+package main
+
+import (
+	"fmt"
+	"github.com/energye/lcl/lcl"
+	"github.com/energye/lcl/types"
+	"github.com/energye/lcl/types/colors"
+	"os"
+	"path/filepath"
+	"widget/test/util"
+	"widget/wg"
+)
+
+func init() {
+	util.TestLoadLibPath()
+}
+
+type TMainForm struct {
+	lcl.TEngForm
+	oldWndPrc uintptr
+	box       lcl.IPanel
+}
+
+var MainForm TMainForm
+
+var (
+	wd, _       = os.Getwd()
+	examplePath = filepath.Join(wd, "test", "input")
+)
+
+func main() {
+	lcl.Init(nil, nil)
+	lcl.Application.Initialize()
+	lcl.Application.SetMainFormOnTaskBar(true)
+	lcl.Application.NewForm(&MainForm)
+	lcl.Application.Run()
+}
+
+func (m *TMainForm) FormCreate(sender lcl.IObject) {
+	m.SetCaption("ENERGY 自绘(自定义)输入框")
+	m.SetPosition(types.PoScreenCenter)
+	m.SetWidth(800)
+	m.SetHeight(600)
+	m.SetDoubleBuffered(true)
+	m.SetColor(colors.RGBToColor(56, 57, 60))
+
+	{
+		click := func(sender lcl.IObject) {
+			fmt.Println(lcl.AsGraphicControl(sender).Caption())
+		}
+		cus := wg.NewButton(m)
+		cus.SetParent(m)
+		cus.SetShowHint(true)
+		cus.SetCaption("上圆角")
+		cus.SetHint("上圆角上圆角")
+		cus.Font().SetSize(12)
+		cus.Font().SetColor(colors.Cl3DFace)
+		cus.SetBoundsRect(types.TRect{Left: 50, Top: 50, Right: 250, Bottom: 90})
+		cus.SetStartColor(colors.RGBToColor(86, 88, 93))
+		cus.SetEndColor(colors.RGBToColor(86, 88, 93))
+		cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
+		cus.SetOnCloseClick(func(sender lcl.IObject) {
+			fmt.Println("点击了 X")
+		})
+		cus.SetIconFavorite(filepath.Join(examplePath, "resources", "icon.png"))
+		cus.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
+		cus.SetOnClick(click)
+
+	}
+}
