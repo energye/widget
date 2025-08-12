@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
@@ -45,26 +44,12 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	m.SetColor(colors.RGBToColor(56, 57, 60))
 
 	{
-		click := func(sender lcl.IObject) {
-			fmt.Println(lcl.AsGraphicControl(sender).Caption())
-		}
-		cus := wg.NewButton(m)
+		cus := wg.NewInput(m)
 		cus.SetParent(m)
 		cus.SetShowHint(true)
 		cus.SetCaption("上圆角")
 		cus.SetHint("上圆角上圆角")
 		cus.Font().SetSize(12)
 		cus.Font().SetColor(colors.Cl3DFace)
-		cus.SetBoundsRect(types.TRect{Left: 50, Top: 50, Right: 250, Bottom: 90})
-		cus.SetStartColor(colors.RGBToColor(86, 88, 93))
-		cus.SetEndColor(colors.RGBToColor(86, 88, 93))
-		cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
-		cus.SetOnCloseClick(func(sender lcl.IObject) {
-			fmt.Println("点击了 X")
-		})
-		cus.SetIconFavorite(filepath.Join(examplePath, "resources", "icon.png"))
-		cus.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
-		cus.SetOnClick(click)
-
 	}
 }
