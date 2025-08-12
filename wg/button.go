@@ -198,20 +198,8 @@ func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.
 }
 
 func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect) {
-	img := m.imgPool
-	if img.Width() != rect.Width() || img.Height() != rect.Height() {
-		img.SetSize(rect.Width(), rect.Height())
-	}
-	tempBMap := m.imgBMapPool
-	if tempBMap.Width() != rect.Width() || tempBMap.Height() != rect.Height() {
-		tempBMap.SetSize(rect.Width(), rect.Height())
-	}
-
-	text := m.Caption()
-
 	startColor := m.startColor
 	endColor := m.endColor
-
 	if !m.IsDisable && m.isEnter {
 		startColor = darkenColor(startColor, 0.1)
 		endColor = darkenColor(endColor, 0.1)
@@ -225,11 +213,21 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	startR := colors.Red(startColor)
 	startG := colors.Green(startColor)
 	startB := colors.Blue(startColor)
-
 	// 获取结束颜色分量
 	endR := colors.Red(endColor)
 	endG := colors.Green(endColor)
 	endB := colors.Blue(endColor)
+
+	img := m.imgPool
+	if img.Width() != rect.Width() || img.Height() != rect.Height() {
+		img.SetSize(rect.Width(), rect.Height())
+	}
+	tempBMap := m.imgBMapPool
+	if tempBMap.Width() != rect.Width() || tempBMap.Height() != rect.Height() {
+		tempBMap.SetSize(rect.Width(), rect.Height())
+	}
+
+	text := m.Caption()
 
 	// 创建垂直渐变（带抗锯齿圆角）
 	imgHeight := img.Height()
