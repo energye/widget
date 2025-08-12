@@ -245,6 +245,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 			img.SetColors(int32(x), int32(y), curColor)
 		}
 	}
+
 	// 创建临时位图并加载图像数据
 	tempBMap.LoadFromIntfImage(img)
 	// 绘制到目标画布
