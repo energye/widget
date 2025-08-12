@@ -114,14 +114,14 @@ func NewButton(owner lcl.IComponent) *TButton {
 }
 
 func (m *TButton) iconChange(sender lcl.IObject) {
-	if m.IsDisable {
+	if m.IsDisable || !m.IsValid() {
 		return
 	}
 	m.Invalidate()
 }
 
 func (m *TButton) enter(sender lcl.IObject) {
-	if m.IsDisable {
+	if m.IsDisable || !m.IsValid() {
 		return
 	}
 	m.isEnter = true
@@ -132,6 +132,9 @@ func (m *TButton) enter(sender lcl.IObject) {
 }
 
 func (m *TButton) isCloseArea(X int32, Y int32) bool {
+	if !m.IsValid() {
+		return false
+	}
 	rect := m.ClientRect()
 	closeX := rect.Width() - m.iconClose.Width() - 10
 	closeY := rect.Height()/2 - m.iconClose.Height()/2
@@ -140,7 +143,7 @@ func (m *TButton) isCloseArea(X int32, Y int32) bool {
 
 func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y int32) {
 	lcl.Screen.SetCursor(types.CrDefault)
-	if m.IsDisable {
+	if m.IsDisable || !m.IsValid() {
 		return
 	}
 	if m.isCloseArea(X, Y) {
@@ -157,7 +160,7 @@ func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y i
 func (m *TButton) leave(sender lcl.IObject) {
 	m.isEnter = false
 	m.isEnterClose = false
-	if m.IsDisable {
+	if m.IsDisable || !m.IsValid() {
 		return
 	}
 	m.Invalidate()
@@ -167,7 +170,7 @@ func (m *TButton) leave(sender lcl.IObject) {
 }
 
 func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
-	if m.IsDisable {
+	if m.IsDisable || !m.IsValid() {
 		return
 	}
 	if m.isCloseArea(X, Y) {
@@ -184,7 +187,7 @@ func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift type
 }
 
 func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
-	if m.IsDisable {
+	if m.IsDisable || !m.IsValid() {
 		return
 	}
 	m.isDown = false
@@ -310,6 +313,9 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 }
 
 func (m *TButton) SetIcon(filePath string) {
+	if !m.IsValid() {
+		return
+	}
 	if !m.IsScaled {
 		m.icon.LoadFromFile(filePath)
 		return
@@ -318,6 +324,9 @@ func (m *TButton) SetIcon(filePath string) {
 }
 
 func (m *TButton) SetIconFavorite(filePath string) {
+	if !m.IsValid() {
+		return
+	}
 	if !m.IsScaled {
 		m.iconFavorite.LoadFromFile(filePath)
 		return
@@ -326,6 +335,9 @@ func (m *TButton) SetIconFavorite(filePath string) {
 }
 
 func (m *TButton) SetIconClose(filePath string) {
+	if !m.IsValid() {
+		return
+	}
 	path, name := filepath.Split(filePath)
 	ns := strings.Split(name, ".")
 	enterFilePath := filepath.Join(path, ns[0]+"_enter.png")
@@ -374,6 +386,9 @@ func (m *TButton) SetIconClose(filePath string) {
 //}
 
 func (m *TButton) paint(sender lcl.IObject) {
+	if !m.IsValid() {
+		return
+	}
 	m.drawRoundedGradientButton(m.Canvas(), m.ClientRect())
 	if m.onPaint != nil {
 		m.onPaint(sender)
