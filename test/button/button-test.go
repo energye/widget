@@ -43,17 +43,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	m.SetWidth(800)
 	m.SetHeight(600)
 	m.SetDoubleBuffered(true)
-	//m.SetColor(colors.ClYellow)
 	m.SetColor(colors.RGBToColor(56, 57, 60))
-
-	//m.box = lcl.NewPanel(m)
-	//m.box.SetParent(m)
-	////m.box.SetAlign(types.AlClient)
-	//m.box.SetDoubleBuffered(true)
-	//m.box.SetBounds(5, 5, m.Width()-10, m.Height()-10)
-	//m.box.SetAnchors(types.NewSet(types.AkLeft, types.AkTop, types.AkRight, types.AkBottom))
-	//m.box.SetColor(colors.RGBToColor(56, 57, 60))
-	//m.box.SetBevelOuter(types.BvNone)
 
 	{
 		click := func(sender lcl.IObject) {
@@ -159,37 +149,4 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		}
 	}
 
-	//{
-	//
-	//	png := lcl.NewPortableNetworkGraphic()
-	//	png.LoadFromFile("D:\\Energy-Doc\\energy-icon-198x198.png")
-	//	//png.GetSize(&tabWidth, &tabHeight)
-	//	tabWidth, tabHeight := int32(192), int32(56)
-	//	tabBuf := lcl.NewBitmap()
-	//	//tabBuf.SetPixelFormat(types.Pf32bit)
-	//	//tabBuf.SetSize(tabWidth, tabHeight)
-	//	//tabBuf.Canvas().StretchDrawWithRectGraphic()
-	//
-	//	//tabBuf.Canvas().SetAntialiasingMode(types.AmOn)
-	//	//tabBuf.Canvas().BrushToBrush().SetColor()
-	//	tabBuf.LoadFromFile("E:\\SWT\\gopath\\src\\github.com\\energye\\energy\\examples\\osr\\alienwindow\\1ttt.bmp")
-	//	//tabBuf.Assign(png)
-	//
-	//	tab := lcl.NewPanel(m)
-	//	tab.SetParent(m)
-	//	// 设置面板默认属性
-	//	tab.SetBevelOuter(types.BvNone)
-	//	tab.SetParentBackground(false)
-	//	tab.SetWidth(tabWidth)
-	//	tab.SetHeight(tabHeight)
-	//
-	//	tab.SetOnPaint(func(sender lcl.IObject) {
-	//		fmt.Println("tab.OnPaint")
-	//		tab.Canvas().DrawWithIntX2Graphic(0, 0, tabBuf)
-	//	})
-	//	tab.SetOnResize(func(sender lcl.IObject) {
-	//		fmt.Println("tab.OnResize")
-	//		tab.Invalidate()
-	//	})
-	//}
 }
