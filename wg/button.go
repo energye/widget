@@ -204,12 +204,12 @@ func (m *TButton) preDoDraw() {
 	endColor := m.endColor
 
 	if !m.IsDisable && m.isEnter {
-		startColor = darkenColor(startColor, 0.1)
-		endColor = darkenColor(endColor, 0.1)
+		startColor = DarkenColor(startColor, 0.1)
+		endColor = DarkenColor(endColor, 0.1)
 	}
 	if !m.IsDisable && m.isDown {
-		startColor = darkenColor(startColor, 0.2)
-		endColor = darkenColor(endColor, 0.2)
+		startColor = DarkenColor(startColor, 0.2)
+		endColor = DarkenColor(endColor, 0.2)
 	}
 
 	// 获取起始颜色分量
@@ -257,12 +257,12 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	endColor := m.endColor
 
 	if !m.IsDisable && m.isEnter {
-		startColor = darkenColor(startColor, 0.1)
-		endColor = darkenColor(endColor, 0.1)
+		startColor = DarkenColor(startColor, 0.1)
+		endColor = DarkenColor(endColor, 0.1)
 	}
 	if !m.IsDisable && m.isDown {
-		startColor = darkenColor(startColor, 0.2)
-		endColor = darkenColor(endColor, 0.2)
+		startColor = DarkenColor(startColor, 0.2)
+		endColor = DarkenColor(endColor, 0.2)
 	}
 
 	// 获取起始颜色分量
@@ -526,7 +526,7 @@ func min(a, b int32) int32 {
 	return b
 }
 
-func darkenColor(color types.TColor, factor float64) types.TColor {
+func DarkenColor(color types.TColor, factor float64) types.TColor {
 	R := colors.Red(color)
 	G := colors.Green(color)
 	B := colors.Blue(color)
