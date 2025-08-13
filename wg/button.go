@@ -22,13 +22,15 @@ type RoundedCorners = types.TSet
 
 type TButton struct {
 	lcl.ICustomGraphicControl
-	startColor               colors.TColor  // 按钮起始渐变颜色
-	endColor                 colors.TColor  // 按钮结束渐变颜色
-	activeColor              float32        // 按钮激活颜色深度 0.0 ~ 1.0
-	alpha                    byte           // 透明度 0 ~ 255
-	radius                   int32          // 圆角度
-	isEnter                  bool           // 鼠标是否移入
-	isDown                   bool           // 鼠标是否按下
+	startColor colors.TColor // 按钮起始渐变颜色
+	endColor   colors.TColor // 按钮结束渐变颜色
+
+	isEnter bool // 鼠标是否移入
+	isDown  bool // 鼠标是否按下
+
+	alpha  byte  // 透明度 0 ~ 255
+	radius int32 // 圆角度
+
 	RoundedCorner            RoundedCorners // 按钮圆角方向，默认四角
 	TextOffSetX, TextOffSetY int32          // 文本显示偏移位置
 	// 图标
@@ -46,12 +48,9 @@ type TButton struct {
 	onMouseUp    lcl.TMouseEvent
 	// 是否禁用
 	IsDisable bool
-	// 缩放
-	IsScaled                  bool
-	ScaledWidth, ScaledHeight int32
 	// img pool
-	imgPool     lcl.ILazIntfImage
-	imgBMapPool lcl.IBitmap
+	imgPool   lcl.ILazIntfImage
+	colorPool lcl.IBitmap
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -66,8 +65,6 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.endColor = colors.ClNavy
 	m.alpha = 180
 	m.radius = 10
-	m.IsScaled = false
-	m.ScaledWidth, m.ScaledHeight = 120/2, 40/2
 	m.ICustomGraphicControl.SetOnPaint(m.paint)
 	m.ICustomGraphicControl.SetOnMouseEnter(m.enter)
 	m.ICustomGraphicControl.SetOnMouseLeave(m.leave)
@@ -85,8 +82,8 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.icon.SetOnChange(m.iconChange)
 	// 创建图像对象
 	m.imgPool = lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha))
-	m.imgBMapPool = lcl.NewBitmap()
-	m.imgBMapPool.SetPixelFormat(types.Pf32bit)
+	m.colorPool = lcl.NewBitmap()
+	m.colorPool.SetPixelFormat(types.Pf32bit)
 	// 销毁事件
 	m.SetOnDestroy(func() {
 		//fmt.Println("Graphic Button 释放资源")
@@ -108,7 +105,7 @@ func NewButton(owner lcl.IComponent) *TButton {
 		m.iconCloseHighlight.Free()
 		m.icon.Free()
 		m.imgPool.Free()
-		m.imgBMapPool.Free()
+		m.colorPool.Free()
 	})
 	return m
 }
@@ -197,9 +194,14 @@ func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.
 	}
 }
 
+func (m *TButton) doDraw() {
+
+}
+
 func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect) {
 	startColor := m.startColor
 	endColor := m.endColor
+
 	if !m.IsDisable && m.isEnter {
 		startColor = darkenColor(startColor, 0.1)
 		endColor = darkenColor(endColor, 0.1)
@@ -222,12 +224,10 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	if img.Width() != rect.Width() || img.Height() != rect.Height() {
 		img.SetSize(rect.Width(), rect.Height())
 	}
-	tempBMap := m.imgBMapPool
+	tempBMap := m.colorPool
 	if tempBMap.Width() != rect.Width() || tempBMap.Height() != rect.Height() {
 		tempBMap.SetSize(rect.Width(), rect.Height())
 	}
-
-	text := m.Caption()
 
 	// 创建垂直渐变（带抗锯齿圆角）
 	imgHeight := img.Height()
@@ -273,7 +273,8 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 		availWidth = 0
 	}
 
-	// 截断文本（如果需要）
+	text := m.Caption()
+	// 截断文本
 	if len(text) > 0 {
 		text = truncateText(canvas, text, availWidth)
 	}
@@ -314,22 +315,16 @@ func (m *TButton) SetIcon(filePath string) {
 	if !m.IsValid() {
 		return
 	}
-	if !m.IsScaled {
-		m.icon.LoadFromFile(filePath)
-		return
-	}
-	//m.scaled(filePath, m.icon)
+	m.icon.LoadFromFile(filePath)
+	return
 }
 
 func (m *TButton) SetIconFavorite(filePath string) {
 	if !m.IsValid() {
 		return
 	}
-	if !m.IsScaled {
-		m.iconFavorite.LoadFromFile(filePath)
-		return
-	}
-	//m.scaled(filePath, m.iconFavorite)
+	m.iconFavorite.LoadFromFile(filePath)
+	return
 }
 
 func (m *TButton) SetIconClose(filePath string) {
@@ -339,49 +334,10 @@ func (m *TButton) SetIconClose(filePath string) {
 	path, name := filepath.Split(filePath)
 	ns := strings.Split(name, ".")
 	enterFilePath := filepath.Join(path, ns[0]+"_enter.png")
-	if !m.IsScaled {
-		m.iconClose.LoadFromFile(filePath)
-		m.iconCloseHighlight.LoadFromFile(enterFilePath)
-		return
-	}
-	//m.scaled(filePath, m.iconClose)
-	//m.scaled(enterFilePath, m.iconCloseHighlight)
+	m.iconClose.LoadFromFile(filePath)
+	m.iconCloseHighlight.LoadFromFile(enterFilePath)
+	return
 }
-
-//func (m *TButton) scaled(filePath string, pic lcl.IPicture) {
-//	if ext := strings.ToLower(filepath.Ext(filePath)); ext == ".png" || ext == ".ico" {
-//		var srcGraphic lcl.IGraphic
-//		// 加载源图像
-//		if ext == ".png" {
-//			picObj := lcl.NewPicture()
-//			defer picObj.Free()
-//			picObj.LoadFromFile(filePath)
-//			srcGraphic = picObj.Graphic()
-//		} else { // .ico
-//			ico := lcl.NewIcon()
-//			defer ico.Free()
-//			ico.LoadFromFile(filePath)
-//			srcGraphic = ico
-//		}
-//
-//		// 缩放处理
-//
-//		icoBmp := lcl.NewBitmap()
-//		defer icoBmp.Free()
-//		icoBmp.SetPixelFormat(types.Pf32bit)
-//		icoBmp.SetSize(srcGraphic.Width(), srcGraphic.Height())
-//		icoBmp.Canvas().DrawWithIntX2Graphic(0, 0, srcGraphic)
-//
-//		scaledBitmap := lcl.NewBitmap()
-//		defer scaledBitmap.Free()
-//		scaledBitmap.SetPixelFormat(types.Pf32bit)
-//		scaledBitmap.SetSize(m.ScaledWidth, m.ScaledHeight)
-//		scaledBitmap.Canvas().SetAntialiasingMode(types.AmOn)
-//		scaledBitmap.Canvas().StretchDrawWithRectGraphic(types.Rect(0, 0, m.ScaledWidth, m.ScaledHeight), icoBmp)
-//
-//		pic.Assign(scaledBitmap)
-//	}
-//}
 
 func (m *TButton) paint(sender lcl.IObject) {
 	if !m.IsValid() {
@@ -538,7 +494,7 @@ func sqrt(v float64) float32 {
 	return float32(math.Sqrt(v))
 }
 
-// 文本截断函数（添加在文件末尾）
+// 文本截断函数（添加在文本末尾）
 func truncateText(canvas lcl.ICanvas, text string, maxWidth int32) string {
 	if maxWidth <= 0 {
 		return ""
