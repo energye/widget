@@ -7,6 +7,7 @@ import (
 	"math"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 type RoundedCorner = int32
@@ -49,8 +50,9 @@ type TButton struct {
 	// 是否禁用
 	IsDisable bool
 	// img pool
-	imgPool   lcl.ILazIntfImage
-	colorPool lcl.IBitmap
+	imgPool       lcl.ILazIntfImage
+	imgBitmapPool lcl.IBitmap
+	imgPoolLock   sync.Mutex
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -82,8 +84,8 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.icon.SetOnChange(m.iconChange)
 	// 创建图像对象
 	m.imgPool = lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha))
-	m.colorPool = lcl.NewBitmap()
-	m.colorPool.SetPixelFormat(types.Pf32bit)
+	m.imgBitmapPool = lcl.NewBitmap()
+	m.imgBitmapPool.SetPixelFormat(types.Pf32bit)
 	// 销毁事件
 	m.SetOnDestroy(func() {
 		//fmt.Println("Graphic Button 释放资源")
@@ -105,7 +107,7 @@ func NewButton(owner lcl.IComponent) *TButton {
 		m.iconCloseHighlight.Free()
 		m.icon.Free()
 		m.imgPool.Free()
-		m.colorPool.Free()
+		m.imgBitmapPool.Free()
 	})
 	return m
 }
@@ -194,8 +196,60 @@ func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.
 	}
 }
 
-func (m *TButton) doDraw() {
+func (m *TButton) preDoDraw() {
+	m.imgPoolLock.Lock()
+	defer m.imgPoolLock.Unlock()
+	rect := m.ClientRect()
+	startColor := m.startColor
+	endColor := m.endColor
 
+	if !m.IsDisable && m.isEnter {
+		startColor = darkenColor(startColor, 0.1)
+		endColor = darkenColor(endColor, 0.1)
+	}
+	if !m.IsDisable && m.isDown {
+		startColor = darkenColor(startColor, 0.2)
+		endColor = darkenColor(endColor, 0.2)
+	}
+
+	// 获取起始颜色分量
+	startR := colors.Red(startColor)
+	startG := colors.Green(startColor)
+	startB := colors.Blue(startColor)
+	// 获取结束颜色分量
+	endR := colors.Red(endColor)
+	endG := colors.Green(endColor)
+	endB := colors.Blue(endColor)
+
+	img := m.imgPool
+	if img.Width() != rect.Width() || img.Height() != rect.Height() {
+		img.SetSize(rect.Width(), rect.Height())
+	}
+	tempBMap := m.imgBitmapPool
+	if tempBMap.Width() != rect.Width() || tempBMap.Height() != rect.Height() {
+		tempBMap.SetSize(rect.Width(), rect.Height())
+	}
+
+	// 创建垂直渐变（带抗锯齿圆角）
+	imgHeight := img.Height()
+	imgWidth := img.Width()
+	for y := 0; y < int(imgHeight); y++ {
+		ratio := float64(y) / float64(imgHeight-1)
+		r := round(float64(startR)*(1-ratio) + float64(endR)*ratio)
+		g := round(float64(startG)*(1-ratio) + float64(endG)*ratio)
+		b := round(float64(startB)*(1-ratio) + float64(endB)*ratio)
+		curColor := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
+		// 注意：Alpha会在内循环中为每个像素单独设置
+		for x := 0; x < int(imgWidth); x++ {
+			alphaFactor := m.calculateRoundedAlpha(int32(x), int32(y), imgWidth, imgHeight, m.radius)
+			actualAlpha := round(float64(m.alpha) * float64(alphaFactor))
+			curColor.Alpha = uint16(actualAlpha) << 8
+			img.SetColors(int32(x), int32(y), curColor)
+		}
+	}
+
+	// 创建临时位图并加载图像数据
+	tempBMap.LoadFromIntfImage(img)
 }
 
 func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect) {
@@ -224,7 +278,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	if img.Width() != rect.Width() || img.Height() != rect.Height() {
 		img.SetSize(rect.Width(), rect.Height())
 	}
-	tempBMap := m.colorPool
+	tempBMap := m.imgBitmapPool
 	if tempBMap.Width() != rect.Width() || tempBMap.Height() != rect.Height() {
 		tempBMap.SetSize(rect.Width(), rect.Height())
 	}
@@ -249,8 +303,9 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 
 	// 创建临时位图并加载图像数据
 	tempBMap.LoadFromIntfImage(img)
+
 	// 绘制到目标画布
-	canvas.DrawWithIntX2Graphic(rect.Left, rect.Top, tempBMap)
+	canvas.DrawWithIntX2Graphic(rect.Left, rect.Top, m.imgBitmapPool)
 
 	// 绘制按钮文字（在原始画布上绘制，确保文字不透明）
 	brush := canvas.BrushToBrush()
