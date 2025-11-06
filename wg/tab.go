@@ -15,21 +15,22 @@ var (
 )
 
 type TTab struct {
-	lcl.IPanel
+	lcl.ICustomPanel
 	pages     []*TPage
 	removeing bool
 }
 
 type TPage struct {
-	lcl.IPanel
-	active bool
-	tab    *TTab
-	button *TButton
+	lcl.ICustomPanel
+	active bool     // 是否激活
+	show   bool     // 是否显示
+	tab    *TTab    // 所属的tab
+	button *TButton // 按钮
 }
 
 func NewTab(owner lcl.IComponent) *TTab {
 	tab := &TTab{}
-	tab.IPanel = lcl.NewPanel(owner)
+	tab.ICustomPanel = lcl.NewCustomPanel(owner)
 	tab.SetBevelInner(types.BvNone)
 	tab.SetBevelOuter(types.BvNone)
 	//tab.SetColor(colors.ClRed)
@@ -66,13 +67,13 @@ func (m *TTab) NewPage() *TPage {
 	sheet.SetAlign(types.AlCustom)
 	sheet.SetAnchors(types.NewSet(types.AkLeft, types.AkTop, types.AkRight, types.AkBottom))
 	sheet.SetParent(m)
-	page.IPanel = sheet
+	page.ICustomPanel = sheet
 
 	m.pages = append(m.pages, page)
 	m.toButtonPoint()
 	page.initEvent()
-	m.hideAll()
-	page.Show()
+	m.HiddenAllActivated()
+	page.Active(true)
 	return page
 }
 
@@ -88,10 +89,11 @@ func (m *TTab) toButtonPoint() {
 	}
 }
 
-func (m *TTab) hideAll() {
+// HiddenAllActivated 隐藏所有激活页面
+func (m *TTab) HiddenAllActivated() {
 	for _, page := range m.pages {
 		if page.active {
-			page.Hide()
+			page.Active(false)
 		}
 	}
 }
@@ -106,18 +108,20 @@ func (m *TTab) RemovePage(removePage *TPage) {
 			break
 		}
 	}
-	// 根据删除索引获取要显示的 page
-	var showPage *TPage
-	if removeIndex != -1 && removeIndex < len(m.pages) {
-		showPage = m.pages[removeIndex] // 显示当前索引的 page, 也就是删除后的下一个
-	} else if len(m.pages) > 0 {
-		showPage = m.pages[0] // 显示第一个 page
-	}
 	// 重新计算 button 位置
 	m.toButtonPoint()
-	if showPage != nil {
-		m.hideAll() // 先隐藏掉所有
-		showPage.Show()
+	if removePage.active {
+		// 根据删除索引获取要显示的 page
+		var showPage *TPage
+		if removeIndex != -1 && removeIndex < len(m.pages) {
+			showPage = m.pages[removeIndex] // 显示当前索引的 page, 也就是删除后的下一个
+		} else if len(m.pages) > 0 {
+			showPage = m.pages[0] // 显示第一个 page
+		}
+		if showPage != nil {
+			m.HiddenAllActivated()
+			showPage.Active(true)
+		}
 	}
 	m.removeing = false
 }
@@ -128,38 +132,45 @@ func (m *TPage) Remove() {
 	m.button.SetOnCloseClick(nil)
 	// 先隐藏掉
 	m.button.Hide()
-	m.IPanel.Hide()
+	m.ICustomPanel.Hide()
 	// 在page里删除自己
 	m.tab.RemovePage(m)
 	// 最后释放掉
 	m.button.Free()
-	m.IPanel.Free()
+	m.ICustomPanel.Free()
 	m.tab = nil
 }
 
-func (m *TPage) Show() {
-	m.active = true
-	m.IPanel.Show()
-	m.button.SetStartColor(activeColor)
-	m.button.SetEndColor(activeColor)
-	m.button.Invalidate()
+// 激活自己, 会取消激活其它的
+func (m *TPage) Active(active bool) {
+	m.active = active
+	if active {
+		m.ICustomPanel.Show()
+		m.button.SetStartColor(activeColor)
+		m.button.SetEndColor(activeColor)
+		m.button.Invalidate()
+	} else {
+		m.ICustomPanel.Hide()
+		m.button.SetStartColor(defaultColor)
+		m.button.SetEndColor(defaultColor)
+		m.button.Invalidate()
+	}
 }
 
+// 隐藏自己, button 和 page 同时隐藏
 func (m *TPage) Hide() {
-	m.active = false
-	m.IPanel.Hide()
-	m.button.SetStartColor(defaultColor)
-	m.button.SetEndColor(defaultColor)
-	m.button.Invalidate()
+
 }
-func (m *TPage) Button() *TButton {
-	return m.button
+
+// 显示自己, button 和 page 同时显示
+func (m *TPage) Show() {
+
 }
 
 func (m *TPage) initEvent() {
 	m.button.SetOnClick(func(sender lcl.IObject) {
-		m.tab.hideAll()
-		m.Show()
+		m.tab.HiddenAllActivated()
+		m.Active(true)
 	})
 	m.button.SetOnCloseClick(func(sender lcl.IObject) {
 		if m.tab.removeing {
@@ -170,4 +181,8 @@ func (m *TPage) initEvent() {
 			m.Remove()
 		})
 	})
+}
+
+func (m *TPage) Button() *TButton {
+	return m.button
 }
