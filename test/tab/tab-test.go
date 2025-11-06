@@ -59,6 +59,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	tab.SetParent(box)
 	tab.SetBounds(0, 0, box.Width(), box.Height())
 	tab.SetAlign(types.AlClient)
+	tab.RecalculatePosition()
 
 	addPage := func(count int) {
 		page := tab.NewPage()
@@ -92,6 +93,13 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	})
 	add.SetParent(m)
 
+	for i := 0; i < 10; i++ {
+		addPage(count)
+		count++
+	}
+	lcl.RunOnMainThreadAsync(func(id uint32) {
+		tab.RecalculatePosition()
+	})
 }
 
 func RandMixString() string {

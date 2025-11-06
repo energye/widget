@@ -1,6 +1,7 @@
 package wg
 
 import (
+	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
@@ -8,10 +9,11 @@ import (
 )
 
 var (
-	activeColor   = colors.RGBToColor(60, 70, 80)
-	defaultColor  = colors.RGBToColor(86, 88, 100)
-	defaultPrefix = "Tab"
-	defaultHeight = int32(25)
+	activeColor    = colors.RGBToColor(60, 70, 80)
+	defaultColor   = colors.RGBToColor(86, 88, 100)
+	defaultPrefix  = "Tab"
+	defaultHeight  = int32(25)
+	scrollBtnWidth = int32(16)
 )
 
 type TTab struct {
@@ -21,6 +23,7 @@ type TTab struct {
 	deleting         bool     // 正在删除中的 page
 	scrollLeftBtn    *TButton // tab 滚动导航按钮 左滚动
 	scrollRightBtn   *TButton // tab 滚动导航按钮 右滚动
+	scrollOffset     int32    // tab 滚动导航按钮 偏移坐标
 }
 
 type TPage struct {
@@ -47,6 +50,38 @@ func (m *TTab) initScrollBtn() {
 	m.scrollLeftBtn = NewButton(m)
 	m.scrollRightBtn = NewButton(m)
 
+	m.scrollLeftBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-left.png")
+	m.scrollLeftBtn.SetWidth(scrollBtnWidth)
+	m.scrollLeftBtn.SetHeight(defaultHeight)
+	m.scrollLeftBtn.SetLeft(0)
+	m.scrollLeftBtn.SetRadius(0)
+	m.scrollLeftBtn.SetAlpha(255)
+	m.scrollLeftBtn.SetStartColor(colors.ClGray)
+	m.scrollLeftBtn.SetEndColor(colors.ClGray)
+	m.scrollLeftBtn.SetParent(m)
+
+	m.scrollRightBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-right.png")
+	m.scrollRightBtn.SetWidth(scrollBtnWidth)
+	m.scrollRightBtn.SetHeight(defaultHeight)
+	m.scrollRightBtn.SetRadius(0)
+	m.scrollRightBtn.SetAlpha(255)
+	m.scrollRightBtn.SetStartColor(colors.ClGray)
+	m.scrollRightBtn.SetEndColor(colors.ClGray)
+	m.scrollRightBtn.SetLeft(scrollBtnWidth)
+	m.scrollRightBtn.SetParent(m)
+
+	m.scrollLeftBtn.SetOnClick(func(sender lcl.IObject) {
+		width := m.Width()
+		fmt.Println("width:", width, m.widths)
+	})
+
+	m.scrollRightBtn.SetOnClick(func(sender lcl.IObject) {
+		width := m.Width()
+		fmt.Println("width:", width, m.widths)
+		if m.widths > width {
+
+		}
+	})
 }
 
 func (m *TTab) NewPage() *TPage {
@@ -81,16 +116,19 @@ func (m *TTab) NewPage() *TPage {
 	page.ICustomPanel = sheet
 
 	m.pages = append(m.pages, page)
-	m.recalculatePosition()
 	page.initEvent()
 	m.HiddenAllActivated()
 	page.Active(true)
+	m.RecalculatePosition()
 	return page
 }
 
-// 重新计算位置, 在隐藏/移除时使用
-func (m *TTab) recalculatePosition() {
-	var widths int32
+// RecalculatePosition 重新计算位置, 在隐藏/移除时使用
+func (m *TTab) RecalculatePosition() {
+	var widths int32 = m.scrollOffset
+	if m.scrollLeftBtn.Visible() {
+		widths += scrollBtnWidth
+	}
 	for _, page := range m.pages {
 		br := page.button.BoundsRect()
 		width := br.Width()
@@ -100,6 +138,13 @@ func (m *TTab) recalculatePosition() {
 		widths += br.Width()
 	}
 	m.widths = widths
+	m.scrollBtnPosition()
+}
+
+// 滚动导航按钮 位置调整
+func (m *TTab) scrollBtnPosition() {
+	m.scrollRightBtn.SetLeft(m.Width() - scrollBtnWidth)
+	m.scrollRightBtn.BringToFront()
 }
 
 // HiddenAllActivated 隐藏所有激活页面
@@ -124,7 +169,7 @@ func (m *TTab) RemovePage(removePage *TPage) {
 		}
 	}
 	// 重新计算 button 位置
-	m.recalculatePosition()
+	m.RecalculatePosition()
 	if removePage.active {
 		// 根据删除索引获取要显示的 page
 		var showPage *TPage
@@ -199,6 +244,7 @@ func (m *TPage) initEvent() {
 	m.SetOnResize(func(sender lcl.IObject) {
 		br := m.BoundsRect()
 		println("Width:", br.Width())
+		m.tab.scrollBtnPosition()
 	})
 }
 
