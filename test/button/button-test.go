@@ -19,7 +19,6 @@ func init() {
 type TMainForm struct {
 	lcl.TEngForm
 	oldWndPrc uintptr
-	box       lcl.IPanel
 }
 
 var MainForm TMainForm
@@ -52,7 +51,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus := wg.NewButton(m)
 		cus.SetParent(m)
 		cus.SetShowHint(true)
-		cus.SetCaption("上圆角")
+		cus.SetText("上圆角")
 		cus.SetHint("上圆角上圆角")
 		cus.Font().SetSize(12)
 		cus.Font().SetColor(colors.Cl3DFace)
@@ -69,7 +68,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 
 		cus2 := wg.NewButton(m)
 		cus2.SetParent(m)
-		cus2.SetCaption("大圆角")
+		cus2.SetText("大圆角")
 		cus2.SetBoundsRect(types.TRect{Left: 50, Top: 150, Right: 250, Bottom: 220})
 		cus2.SetStartColor(colors.RGBToColor(255, 100, 0))
 		cus2.SetEndColor(colors.RGBToColor(69, 81, 143))
@@ -81,7 +80,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 
 		cus3 := wg.NewButton(m)
 		cus3.SetParent(m)
-		cus3.SetCaption("小圆角")
+		cus3.SetText("小圆角")
 		cus3.SetBoundsRect(types.TRect{Left: 50, Top: 250, Right: 250, Bottom: 320})
 		cus3.SetStartColor(colors.RGBToColor(0, 180, 0))
 		cus3.SetEndColor(colors.RGBToColor(0, 100, 0))
@@ -92,7 +91,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 
 		cus4 := wg.NewButton(m)
 		cus4.SetParent(m)
-		cus4.SetCaption("大大圆角")
+		cus4.SetText("大大圆角")
 		cus4.Font().SetColor(colors.ClWhite)
 		cus4.SetBoundsRect(types.TRect{Left: 50, Top: 350, Right: 250, Bottom: 420})
 		cus4.SetStartColor(colors.RGBToColor(41, 42, 43))
@@ -103,7 +102,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 
 		cus5 := wg.NewButton(m)
 		cus5.SetParent(m)
-		cus5.SetCaption("X")
+		cus5.SetText("X")
 		cus5.Font().SetColor(colors.ClWhite)
 		cus5.Font().SetSize(14)
 		rect5 := types.TRect{Left: 50, Top: 450}
@@ -117,7 +116,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 
 		cus6 := wg.NewButton(m)
 		cus6.SetParent(m)
-		cus6.SetCaption("< X >")
+		cus6.SetText("< X >")
 		cus6.Font().SetColor(colors.ClWhite)
 		cus6.Font().SetSize(14)
 		rect6 := types.TRect{Left: 150, Top: 450}
@@ -128,7 +127,83 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus6.SetRadius(5)
 		cus6.SetAlpha(255)
 		cus6.SetOnClick(click)
-
+		{
+			cus := wg.NewButton(m)
+			cus.SetParent(m)
+			cus.SetShowHint(true)
+			cus.SetText("自动宽1")
+			cus.SetHint("自动宽1")
+			cus.Font().SetSize(12)
+			cus.Font().SetColor(colors.Cl3DFace)
+			rect := types.TRect{Left: 50, Top: 10}
+			rect.SetWidth(100)
+			rect.SetHeight(30)
+			cus.SetBoundsRect(rect)
+			cus.SetStartColor(colors.RGBToColor(86, 88, 93))
+			cus.SetEndColor(colors.RGBToColor(86, 88, 93))
+			cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
+			cus.SetOnCloseClick(func(sender lcl.IObject) {
+				fmt.Println("点击了 X")
+			})
+			cus.SetIconFavorite(filepath.Join(examplePath, "resources", "icon.png"))
+			cus.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
+			cus.SetAutoSize(true)
+			cus.SetOnClick(click)
+			go func() {
+				i := 0
+				str := "自动宽"
+				for {
+					time.Sleep(time.Second / 10)
+					if i > 10 {
+						i = 0
+						lcl.RunOnMainThreadAsync(func(id uint32) {
+							cus.SetText(str)
+						})
+					} else {
+						i++
+						lcl.RunOnMainThreadAsync(func(id uint32) {
+							cus.SetText(cus.Text() + str)
+						})
+					}
+				}
+			}()
+		}
+		{
+			cus7 := wg.NewButton(m)
+			cus7.SetParent(m)
+			cus7.SetText("自动宽2")
+			cus7.Font().SetColor(colors.ClWhite)
+			cus7.SetStartColor(colors.RGBToColor(41, 42, 43))
+			cus7.SetEndColor(colors.RGBToColor(80, 81, 82))
+			rect := types.TRect{Left: 50, Top: 110}
+			rect.SetWidth(100)
+			rect.SetHeight(30)
+			cus7.SetBoundsRect(rect)
+			cus7.SetRadius(8)
+			cus7.SetAlpha(255)
+			cus7.SetAutoSize(true)
+			cus7.SetOnClick(click)
+			cus7.SetIconFavorite(filepath.Join(examplePath, "resources", "icon.png"))
+			cus7.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
+			go func() {
+				i := 0
+				str := "自动宽"
+				for {
+					time.Sleep(time.Second / 5)
+					if i > 10 {
+						i = 0
+						lcl.RunOnMainThreadAsync(func(id uint32) {
+							cus7.SetText(str)
+						})
+					} else {
+						i++
+						lcl.RunOnMainThreadAsync(func(id uint32) {
+							cus7.SetText(cus7.Text() + str)
+						})
+					}
+				}
+			}()
+		}
 	}
 	{
 		if false {
