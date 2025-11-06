@@ -15,9 +15,12 @@ var (
 )
 
 type TTab struct {
-	lcl.ICustomPanel
-	pages     []*TPage
-	removeing bool
+	lcl.ICustomPanel          //
+	pages            []*TPage // 页列表
+	widths           int32    // 页签总宽度
+	deleting         bool     // 正在删除中的 page
+	scrollLeftBtn    *TButton // tab 滚动导航按钮 左滚动
+	scrollRightBtn   *TButton // tab 滚动导航按钮 右滚动
 }
 
 type TPage struct {
@@ -35,7 +38,15 @@ func NewTab(owner lcl.IComponent) *TTab {
 	tab.SetBevelOuter(types.BvNone)
 	//tab.SetColor(colors.ClRed)
 	tab.SetBorderStyleToBorderStyle(types.BsNone)
+	tab.initScrollBtn()
 	return tab
+}
+
+// 初始化滚动导航按钮
+func (m *TTab) initScrollBtn() {
+	m.scrollLeftBtn = NewButton(m)
+	m.scrollRightBtn = NewButton(m)
+
 }
 
 func (m *TTab) NewPage() *TPage {
@@ -70,14 +81,15 @@ func (m *TTab) NewPage() *TPage {
 	page.ICustomPanel = sheet
 
 	m.pages = append(m.pages, page)
-	m.toButtonPoint()
+	m.recalculatePosition()
 	page.initEvent()
 	m.HiddenAllActivated()
 	page.Active(true)
 	return page
 }
 
-func (m *TTab) toButtonPoint() {
+// 重新计算位置, 在隐藏/移除时使用
+func (m *TTab) recalculatePosition() {
 	var widths int32
 	for _, page := range m.pages {
 		br := page.button.BoundsRect()
@@ -87,6 +99,7 @@ func (m *TTab) toButtonPoint() {
 		page.button.SetBoundsRect(br)
 		widths += br.Width()
 	}
+	m.widths = widths
 }
 
 // HiddenAllActivated 隐藏所有激活页面
@@ -97,6 +110,8 @@ func (m *TTab) HiddenAllActivated() {
 		}
 	}
 }
+
+//func (m *TTab)
 
 // 删除指定 page
 func (m *TTab) RemovePage(removePage *TPage) {
@@ -109,7 +124,7 @@ func (m *TTab) RemovePage(removePage *TPage) {
 		}
 	}
 	// 重新计算 button 位置
-	m.toButtonPoint()
+	m.recalculatePosition()
 	if removePage.active {
 		// 根据删除索引获取要显示的 page
 		var showPage *TPage
@@ -123,7 +138,7 @@ func (m *TTab) RemovePage(removePage *TPage) {
 			showPage.Active(true)
 		}
 	}
-	m.removeing = false
+	m.deleting = false
 }
 
 // 删除掉自己
@@ -173,13 +188,17 @@ func (m *TPage) initEvent() {
 		m.Active(true)
 	})
 	m.button.SetOnCloseClick(func(sender lcl.IObject) {
-		if m.tab.removeing {
+		if m.tab.deleting {
 			return
 		}
-		m.tab.removeing = true
+		m.tab.deleting = true
 		lcl.RunOnMainThreadAsync(func(id uint32) {
 			m.Remove()
 		})
+	})
+	m.SetOnResize(func(sender lcl.IObject) {
+		br := m.BoundsRect()
+		println("Width:", br.Width())
 	})
 }
 
