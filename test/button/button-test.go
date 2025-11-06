@@ -151,7 +151,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			cus.SetOnClick(click)
 			go func() {
 				i := 0
-				str := "自动宽"
+				str := "自DEF动CD宽AB"
 				for {
 					time.Sleep(time.Second / 10)
 					if i > 10 {
@@ -187,7 +187,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			cus7.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
 			go func() {
 				i := 0
-				str := "自动宽"
+				str := "自ab动CD宽ef"
 				for {
 					time.Sleep(time.Second / 5)
 					if i > 10 {

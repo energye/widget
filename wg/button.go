@@ -316,21 +316,21 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 func (m *TButton) SetText(value string) {
 	//m.ICustomGraphicControl.SetCaption(value)
 	m.text = value
-
 	if m.autoSize {
-		// 自动大小, 根据文本宽自动调整按钮宽度
-		leftArea := int32(0)
-		if m.iconFavorite.Width() > 0 {
-			leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
-		}
-
-		rightArea := int32(0)
-		if m.iconClose.Width() > 0 {
-			rightArea = iconMargin + m.iconClose.Width() + iconMargin
-		}
-		textWidth := m.Canvas().TextWidthWithUnicodestring(m.text)
-		width := textWidth + leftArea + rightArea + iconMargin*2
-		m.SetWidth(width)
+		lcl.RunOnMainThreadAsync(func(id uint32) {
+			// 自动大小, 根据文本宽自动调整按钮宽度
+			leftArea := int32(0)
+			if m.iconFavorite.Width() > 0 {
+				leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
+			}
+			rightArea := int32(0)
+			if m.iconClose.Width() > 0 {
+				rightArea = iconMargin + m.iconClose.Width() + iconMargin
+			}
+			textWidth := m.Canvas().TextWidthWithUnicodestring(m.text)
+			width := textWidth + leftArea + rightArea + iconMargin*2
+			m.SetWidth(width)
+		})
 	} else {
 		m.Invalidate()
 	}

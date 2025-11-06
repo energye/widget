@@ -8,21 +8,21 @@ import (
 )
 
 var (
-	defaultColor  = colors.RGBToColor(60, 70, 80)
-	activeColor   = colors.RGBToColor(86, 88, 100)
+	activeColor   = colors.RGBToColor(60, 70, 80)
+	defaultColor  = colors.RGBToColor(86, 88, 100)
 	defaultPrefix = "Tab"
 	defaultHeight = int32(25)
 )
 
 type TTab struct {
 	lcl.IPanel
-	pages []*TPage
+	pages     []*TPage
+	removeing bool
 }
 
 type TPage struct {
 	lcl.IPanel
 	active bool
-	remove bool
 	tab    *TTab
 	button *TButton
 }
@@ -41,6 +41,7 @@ func (m *TTab) NewPage() *TPage {
 	page := new(TPage)
 	page.tab = m
 	button := NewButton(m)
+	button.SetAutoSize(true)
 	button.SetShowHint(true)
 	button.SetText(defaultPrefix + strconv.Itoa(len(m.pages)))
 	button.Font().SetSize(9)
@@ -50,7 +51,6 @@ func (m *TTab) NewPage() *TPage {
 	button.RoundedCorner = button.RoundedCorner.Exclude(RcLeftBottom).Exclude(RcRightBottom)
 	button.SetRadius(0)
 	button.SetAlpha(255)
-	button.SetAutoSize(true)
 	button.SetHeight(defaultHeight)
 	button.SetParent(m)
 	page.button = button
@@ -119,6 +119,7 @@ func (m *TTab) RemovePage(removePage *TPage) {
 		m.hideAll() // 先隐藏掉所有
 		showPage.Show()
 	}
+	m.removeing = false
 }
 
 // 删除掉自己
@@ -161,6 +162,12 @@ func (m *TPage) initEvent() {
 		m.Show()
 	})
 	m.button.SetOnCloseClick(func(sender lcl.IObject) {
-		m.Remove()
+		if m.tab.removeing {
+			return
+		}
+		m.tab.removeing = true
+		lcl.RunOnMainThreadAsync(func(id uint32) {
+			m.Remove()
+		})
 	})
 }
