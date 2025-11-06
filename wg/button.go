@@ -21,7 +21,7 @@ const (
 
 type RoundedCorners = types.TSet
 
-const iconMagin = 5
+const iconMargin = 5
 
 type TButton struct {
 	lcl.ICustomGraphicControl
@@ -139,9 +139,9 @@ func (m *TButton) isCloseArea(X int32, Y int32) bool {
 		return false
 	}
 	rect := m.ClientRect()
-	closeX := rect.Width() - m.iconClose.Width() - iconMagin
+	closeX := rect.Width() - m.iconClose.Width() - iconMargin
 	closeY := rect.Height()/2 - m.iconClose.Height()/2
-	return X >= closeX && X <= rect.Width()-iconMagin && Y >= closeY && Y <= rect.Height()/2+m.iconClose.Height()
+	return X >= closeX && X <= rect.Width()-iconMargin && Y >= closeY && Y <= rect.Height()/2+m.iconClose.Height()
 }
 
 func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y int32) {
@@ -199,62 +199,6 @@ func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.
 		m.onMouseUp(sender, button, shift, X, Y)
 	}
 }
-
-//func (m *TButton) preDoDraw() {
-//	m.imgPoolLock.Lock()
-//	defer m.imgPoolLock.Unlock()
-//	rect := m.ClientRect()
-//	startColor := m.startColor
-//	endColor := m.endColor
-//
-//	if !m.IsDisable && m.isEnter {
-//		startColor = DarkenColor(startColor, 0.1)
-//		endColor = DarkenColor(endColor, 0.1)
-//	}
-//	if !m.IsDisable && m.isDown {
-//		startColor = DarkenColor(startColor, 0.2)
-//		endColor = DarkenColor(endColor, 0.2)
-//	}
-//
-//	// 获取起始颜色分量
-//	startR := colors.Red(startColor)
-//	startG := colors.Green(startColor)
-//	startB := colors.Blue(startColor)
-//	// 获取结束颜色分量
-//	endR := colors.Red(endColor)
-//	endG := colors.Green(endColor)
-//	endB := colors.Blue(endColor)
-//
-//	img := m.imgPool
-//	if img.Width() != rect.Width() || img.Height() != rect.Height() {
-//		img.SetSize(rect.Width(), rect.Height())
-//	}
-//	tempBMap := m.imgBitmapPool
-//	if tempBMap.Width() != rect.Width() || tempBMap.Height() != rect.Height() {
-//		tempBMap.SetSize(rect.Width(), rect.Height())
-//	}
-//
-//	// 创建垂直渐变（带抗锯齿圆角）
-//	imgHeight := img.Height()
-//	imgWidth := img.Width()
-//	for y := 0; y < int(imgHeight); y++ {
-//		ratio := float64(y) / float64(imgHeight-1)
-//		r := round(float64(startR)*(1-ratio) + float64(endR)*ratio)
-//		g := round(float64(startG)*(1-ratio) + float64(endG)*ratio)
-//		b := round(float64(startB)*(1-ratio) + float64(endB)*ratio)
-//		curColor := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
-//		// 注意：Alpha会在内循环中为每个像素单独设置
-//		for x := 0; x < int(imgWidth); x++ {
-//			alphaFactor := m.calculateRoundedAlpha(int32(x), int32(y), imgWidth, imgHeight, m.radius)
-//			actualAlpha := round(float64(m.alpha) * float64(alphaFactor))
-//			curColor.Alpha = uint16(actualAlpha) << 8
-//			img.SetColors(int32(x), int32(y), curColor)
-//		}
-//	}
-//
-//	// 创建临时位图并加载图像数据
-//	tempBMap.LoadFromIntfImage(img)
-//}
 
 func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect) {
 	startColor := m.startColor
@@ -319,12 +263,12 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	// 计算左右图标占用的空间
 	leftArea := int32(0)
 	if m.iconFavorite.Width() > 0 {
-		leftArea = iconMagin + m.iconFavorite.Width() + iconMagin // 左边距10 + 图标宽度 + 图标与文本间距10
+		leftArea = iconMargin + m.iconFavorite.Width() + iconMargin // 左边距10 + 图标宽度 + 图标与文本间距10
 	}
 
 	rightArea := int32(0)
 	if m.iconClose.Width() > 0 {
-		rightArea = iconMagin + m.iconClose.Width() + iconMagin // 右边距10 + 图标宽度 + 图标与文本间距10
+		rightArea = iconMargin + m.iconClose.Width() + iconMargin // 右边距10 + 图标宽度 + 图标与文本间距10
 	}
 
 	// 计算文本可用宽度
@@ -352,13 +296,13 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 
 	// 绘制图标 favorite 在左
 	favY := rect.Height()/2 - m.iconFavorite.Height()/2
-	canvas.DrawWithIntX2Graphic(iconMagin, favY, m.iconFavorite.Graphic())
+	canvas.DrawWithIntX2Graphic(iconMargin, favY, m.iconFavorite.Graphic())
 	// 绘制图标 close 在右
 	iconClose := m.iconClose
 	if m.isEnterClose {
 		iconClose = m.iconCloseHighlight
 	}
-	closeX := rect.Width() - iconClose.Width() - iconMagin
+	closeX := rect.Width() - iconClose.Width() - iconMargin
 	closeY := rect.Height()/2 - iconClose.Height()/2
 	canvas.DrawWithIntX2Graphic(closeX, closeY, iconClose.Graphic())
 
@@ -377,15 +321,15 @@ func (m *TButton) SetText(value string) {
 		// 自动大小, 根据文本宽自动调整按钮宽度
 		leftArea := int32(0)
 		if m.iconFavorite.Width() > 0 {
-			leftArea = iconMagin + m.iconFavorite.Width() + iconMagin
+			leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
 		}
 
 		rightArea := int32(0)
 		if m.iconClose.Width() > 0 {
-			rightArea = iconMagin + m.iconClose.Width() + iconMagin
+			rightArea = iconMargin + m.iconClose.Width() + iconMargin
 		}
 		textWidth := m.Canvas().TextWidthWithUnicodestring(m.text)
-		width := textWidth + leftArea + rightArea + iconMagin*2
+		width := textWidth + leftArea + rightArea + iconMargin*2
 		m.SetWidth(width)
 	} else {
 		m.Invalidate()
