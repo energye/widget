@@ -22,7 +22,7 @@ type TRoundedCorners = types.TSet
 
 const iconMargin = 5
 
-type buttonState int32
+type buttonState = int32
 
 const (
 	bsDefault  buttonState = iota // 默认状态
@@ -78,8 +78,8 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.SetParentColor(true)
 	m.Canvas().SetAntialiasingMode(types.AmOn)
 	m.SetControlStyle(m.ControlStyle().Include(types.CsParentBackground))
-	m.alpha = 180
-	m.radius = 10
+	m.alpha = 255
+	m.radius = 0
 	m.ICustomGraphicControl.SetOnPaint(m.paint)
 	m.ICustomGraphicControl.SetOnMouseEnter(m.enter) // 进入
 	m.ICustomGraphicControl.SetOnMouseLeave(m.leave) // 移出
@@ -95,13 +95,25 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.iconClose.SetOnChange(m.iconChange)
 	m.iconCloseHighlight.SetOnChange(m.iconChange)
 	m.icon.SetOnChange(m.iconChange)
-	// 创建图像对象
+	// 创建按钮颜色对象
 	m.defaultColor = NewButtonColor(defaultButtonColor, defaultButtonColor)
+	m.defaultColor.type_ = bsDefault
+	m.defaultColor.borders = types.NewSet(EbbLeft, EbbRight, EbbTop, EbbBottom)
+
 	enterColor := DarkenColor(defaultButtonColor, 0.1)
 	m.enterColor = NewButtonColor(enterColor, enterColor)
+	m.enterColor.type_ = bsEnter
+	m.enterColor.borders = types.NewSet(EbbLeft, EbbRight, EbbTop, EbbBottom)
+
 	downColor := DarkenColor(defaultButtonColor, 0.2)
 	m.downColor = NewButtonColor(downColor, downColor)
+	m.downColor.type_ = bsDown
+	m.downColor.borders = types.NewSet(EbbLeft, EbbRight, EbbTop, EbbBottom)
+
 	m.disabledColor = NewButtonColor(defaultButtonColorDisable, defaultButtonColorDisable)
+	m.disabledColor.type_ = bsDisabled
+	m.disabledColor.borders = types.NewSet(EbbLeft, EbbRight, EbbTop, EbbBottom)
+
 	// 销毁事件
 	m.SetOnDestroy(func() {
 		//fmt.Println("Graphic Button 释放资源")
@@ -450,11 +462,42 @@ func (m *TButton) SetDisabledColor(start, end colors.TColor) {
 	m.disabledColor.end = end
 	m.disabledColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
+
 func (m *TButton) DisabledColor() (start, end colors.TColor) {
 	start = m.disabledColor.start
 	end = m.disabledColor.end
 	return
 }
+
+// SetBorderColor 设置按钮所有状态下的边框颜色
+//
+// 参数:
+//
+//	color - 指定的边框颜色值
+//
+// 该函数会同时设置按钮在默认、悬停、按下和禁用状态下的边框颜色
+// 为统一的颜色值，实现按钮边框颜色的整体变更
+func (m *TButton) SetBorderColor(color colors.TColor) {
+	m.defaultColor.border = color
+	m.enterColor.border = color
+	m.downColor.border = color
+	m.disabledColor.border = color
+}
+
+// SetBorders 设置按钮的所有状态边框样式
+// 参数:
+//
+//	borders: TButtonBorders类型，指定按钮的边框样式
+//
+// 该函数会同时设置按钮的默认、悬停、按下和禁用四种状态的边框样式
+// 为相同的值，实现统一的边框外观效果
+func (m *TButton) SetBorders(borders TButtonBorders) {
+	m.defaultColor.borders = borders
+	m.enterColor.borders = borders
+	m.downColor.borders = borders
+	m.disabledColor.borders = borders
+}
+
 func (m *TButton) SetAlpha(alpha byte) {
 	m.alpha = alpha
 }
@@ -465,26 +508,6 @@ func (m *TButton) SetRadius(radius int32) {
 
 func (m *TButton) Free() {
 	m.ICustomGraphicControl.Free()
-}
-
-// DarkenColor 函数用于将给定的颜色按照指定因子进行暗化处理
-// 参数:
-//
-//	color: 原始颜色值，类型为 types.TColor
-//	factor: 暗化因子，取值范围通常为 0.0-1.0，值越大颜色越暗
-//
-// 返回值:
-//
-//	返回暗化后的颜色值，类型为 types.TColor
-func DarkenColor(color types.TColor, factor float64) types.TColor {
-	R := colors.Red(color)
-	G := colors.Green(color)
-	B := colors.Blue(color)
-
-	R = byte(round(float64(R) * (1.0 - factor)))
-	G = byte(round(float64(G) * (1.0 - factor)))
-	B = byte(round(float64(B) * (1.0 - factor)))
-	return colors.RGBToColor(R, G, B)
 }
 
 func round(v float64) float64 {

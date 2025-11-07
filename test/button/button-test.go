@@ -64,12 +64,17 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		}
 		cus := wg.NewButton(m)
 		cus.SetShowHint(true)
-		cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
+		//cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
 		cus.SetText("上圆角")
 		cus.SetHint("上圆角上圆角")
 		cus.Font().SetSize(12)
 		cus.Font().SetColor(colors.Cl3DFace)
-		cus.SetBoundsRect(types.TRect{Left: 50, Top: 50, Right: 250, Bottom: 90})
+		cus.SetRadius(5)
+		cus.SetBorderColor(colors.ClWhite)
+		cusRect := types.TRect{Left: 50, Top: 50}
+		cusRect.SetWidth(200)
+		cusRect.SetHeight(40)
+		cus.SetBoundsRect(cusRect)
 		cus.SetDefaultColor(colors.RGBToColor(86, 88, 93), colors.RGBToColor(86, 88, 93))
 		start, end := cus.DefaultColor()
 		cus.SetEnterColor(wg.DarkenColor(start, 0.1), wg.DarkenColor(end, 0.1))
@@ -80,6 +85,9 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus.SetIconFavorite(filepath.Join(examplePath, "resources", "icon.png"))
 		cus.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
 		cus.SetOnClick(click)
+		cus.SetOnDblClick(func(sender lcl.IObject) {
+			println("DblClick")
+		})
 		cus.SetParent(box)
 
 		cus2 := wg.NewButton(m)
@@ -152,22 +160,22 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 				button.Font().SetColor(colors.ClWhite)
 			}
 		}
-		disableBtn := wg.NewButton(m)
-		//disableBtn := lcl.NewButton(m)
+		//disableBtn := wg.NewButton(m)
+		disableBtn := lcl.NewButton(m)
 		disableBtn.SetCaption("禁用/启用 按钮")
 		disableBtnRect := types.TRect{Left: 250, Top: 450}
 		disableBtnRect.SetSize(150, 30)
 		disableBtn.SetBoundsRect(disableBtnRect)
 		disableBtn.SetOnClick(func(sender lcl.IObject) {
 			setDisable(cus)
-			setDisable(cus2)
-			setDisable(cus3)
-			setDisable(cus6)
-			setDisable(cus4)
-			setDisable(cus5)
+			//setDisable(cus2)
+			//setDisable(cus3)
+			//setDisable(cus6)
+			//setDisable(cus4)
+			//setDisable(cus5)
 		})
 		disableBtn.SetParent(box)
-
+		return
 		{
 			cus := wg.NewButton(m)
 			cus.SetShowHint(true)

@@ -6,20 +6,35 @@ import (
 	"github.com/energye/lcl/types/colors"
 )
 
+type TEnableButtonBorder = int32
+
+const (
+	EbbLeft TEnableButtonBorder = iota
+	EbbRight
+	EbbTop
+	EbbBottom
+)
+
+type TButtonBorders = types.TSet
+
 // TButtonColor 按钮颜色
 type TButtonColor struct {
-	start  colors.TColor     // 按钮起始渐变颜色
-	end    colors.TColor     // 按钮结束渐变颜色
-	img    lcl.ILazIntfImage //
-	bitMap lcl.IBitmap       //
+	start   colors.TColor     // 按钮起始渐变颜色
+	end     colors.TColor     // 按钮结束渐变颜色
+	border  colors.TColor     // 按钮边框颜色, 启用边框方向才有作用
+	borders TButtonBorders    // 按钮显示边框方向
+	img     lcl.ILazIntfImage // 缓存
+	bitMap  lcl.IBitmap       // 缓存
+	type_   int32             // 按钮类型, 自定义, 区分类型
 }
 
 func NewButtonColor(start, end colors.TColor) *TButtonColor {
 	m := &TButtonColor{
-		start:  start,
-		end:    end,
-		img:    lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha)),
-		bitMap: lcl.NewBitmap(),
+		start:   start,
+		end:     end,
+		img:     lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha)),
+		bitMap:  lcl.NewBitmap(),
+		borders: types.NewSet(),
 	}
 	m.bitMap.SetPixelFormat(types.Pf32bit)
 	return m
@@ -37,7 +52,7 @@ func (m *TButtonColor) forcePaint(roundedCorners TRoundedCorners, rect types.TRe
 	if m.bitMap.Width() != rect.Width() || m.bitMap.Height() != rect.Height() {
 		m.bitMap.SetSize(rect.Width(), rect.Height())
 	}
-	m.doPaint(roundedCorners, alpha, radius)
+	m.doPaint(roundedCorners, rect, alpha, radius)
 }
 
 // paint 绘制按钮颜色
@@ -59,7 +74,7 @@ func (m *TButtonColor) paint(roundedCorners TRoundedCorners, rect types.TRect, a
 	if !isPaint {
 		return
 	}
-	m.doPaint(roundedCorners, alpha, radius)
+	m.doPaint(roundedCorners, rect, alpha, radius)
 }
 
 // doPaint 绘制带有圆角和透明度的垂直渐变按钮图像。
@@ -68,7 +83,12 @@ func (m *TButtonColor) paint(roundedCorners TRoundedCorners, rect types.TRect, a
 //	roundedCorners: 指定哪些角落需要绘制为圆角
 //	alpha: 图像的整体透明度，取值范围 0-255
 //	radius: 圆角的半径大小
-func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, alpha byte, radius int32) {
+func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect, alpha byte, radius int32) {
+	var (
+		borderWidth = int32(1) // 边框宽度
+		w, h        = rect.Width(), rect.Height()
+	)
+
 	// 提取起始颜色和结束颜色的 RGB 分量，用于计算渐变过程中的颜色插值
 	startR := colors.Red(m.start)
 	startG := colors.Green(m.start)
@@ -81,18 +101,63 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, alpha byte, radiu
 	// 遍历图像每一行，根据当前行位置计算颜色渐变比例，并逐像素设置颜色与透明度
 	imgHeight := m.img.Height()
 	imgWidth := m.img.Width()
-	for y := 0; y < int(imgHeight); y++ {
+	for y := int32(0); y < imgHeight; y++ {
 		ratio := float64(y) / float64(imgHeight-1)
 		r := round(float64(startR)*(1-ratio) + float64(endR)*ratio)
 		g := round(float64(startG)*(1-ratio) + float64(endG)*ratio)
 		b := round(float64(startB)*(1-ratio) + float64(endB)*ratio)
-		curColor := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
+		color := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
+		borderColor := color
+		if m.border != 0 {
+			borderColor = ColorToFPColor(m.border, ratio)
+		} else {
+			DarkenFPColor(&borderColor, 0.5)
+		}
 		// 注意：Alpha会在内循环中为每个像素单独设置
-		for x := 0; x < int(imgWidth); x++ {
-			alphaFactor := m.calculateRoundedAlpha(roundedCorners, int32(x), int32(y), imgWidth, imgHeight, radius)
+		for x := int32(0); x < imgWidth; x++ {
+			alphaFactor, corners := m.calculateRoundedAlpha(roundedCorners, x, y, imgWidth, imgHeight, radius)
+			_ = corners
+			isBorder := false
+			if m.borders != 0 {
+				if alphaFactor < 1.0 {
+					// 圆角
+					if m.borders.In(EbbLeft) && (corners == RcLeftTop || corners == RcLeftBottom) {
+						// 左边框
+						isBorder = true
+					} else if m.borders.In(EbbRight) && (corners == RcRightTop || corners == RcRightBottom) {
+						// 右边框
+						isBorder = true
+					} else if m.borders.In(EbbTop) && (corners == RcRightTop || corners == RcLeftTop) {
+						// 上边框
+						isBorder = true
+					} else if m.borders.In(EbbBottom) && (corners == RcLeftBottom || corners == RcRightBottom) {
+						// 下边框
+						isBorder = true
+					}
+				} else {
+					if m.borders.In(EbbTop) && y < borderWidth && x <= w {
+						// 上边框
+						isBorder = true
+					} else if m.borders.In(EbbLeft) && x < borderWidth && y < h {
+						// 左边框
+						isBorder = true
+					} else if m.borders.In(EbbRight) && x >= w-borderWidth && y < h {
+						// 右边框
+						isBorder = true
+					} else if m.borders.In(EbbBottom) && x < w && y >= h-borderWidth {
+						// 下边框
+						isBorder = true
+					}
+				}
+			}
 			actualAlpha := round(float64(alpha) * float64(alphaFactor))
-			curColor.Alpha = uint16(actualAlpha) << 8
-			m.img.SetColors(int32(x), int32(y), curColor)
+			if isBorder {
+				borderColor.Alpha = uint16(actualAlpha) << 8
+				m.img.SetColors(x, y, borderColor)
+			} else {
+				color.Alpha = uint16(actualAlpha) << 8
+				m.img.SetColors(x, y, color)
+			}
 		}
 	}
 	// 将处理好的图像数据加载到位图对象中，供后续使用
@@ -114,7 +179,7 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, alpha byte, radiu
 // 返回值：
 //
 //	float32: 当前点的 alpha 值，范围 [0.0, 1.0]，表示透明度（0 为完全透明，1 为不透明）
-func (m *TButtonColor) calculateRoundedAlpha(roundedCorners TRoundedCorners, x, y, width, height, radius int32) float32 {
+func (m *TButtonColor) calculateRoundedAlpha(roundedCorners TRoundedCorners, x, y, width, height, radius int32) (alphaValue float32, corners RoundedCorner) {
 	// 计算实际可用最大半径（不超过尺寸限制）
 	maxRadius := min(width/2, height/2)
 	if radius > maxRadius {
@@ -122,7 +187,8 @@ func (m *TButtonColor) calculateRoundedAlpha(roundedCorners TRoundedCorners, x, 
 	}
 	// 如果半径被限制为0，直接返回不透明
 	if radius <= 0 {
-		return 1.0
+		alphaValue = 1.0
+		return
 	}
 	var (
 		cornerX, cornerY int32   // 圆角顶点坐标
@@ -136,46 +202,54 @@ func (m *TButtonColor) calculateRoundedAlpha(roundedCorners TRoundedCorners, x, 
 		cornerY = radius
 		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 		inCorner = true
+		corners = RcLeftTop
 	} else if roundedCorners.In(RcRightTop) && x >= width-radius && y < radius {
 		// 右上角区域
 		cornerX = width - radius - 1
 		cornerY = radius
 		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 		inCorner = true
+		corners = RcRightTop
 	} else if roundedCorners.In(RcLeftBottom) && x < radius && y >= height-radius {
 		// 左下角区域
 		cornerX = radius
 		cornerY = height - radius - 1
 		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 		inCorner = true
+		corners = RcLeftBottom
 	} else if roundedCorners.In(RcRightBottom) && x >= width-radius && y >= height-radius {
 		// 右下角区域
 		cornerX = width - radius - 1
 		cornerY = height - radius - 1
 		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 		inCorner = true
+		corners = RcRightBottom
 	}
 	if !inCorner {
-		// 非圆角区域：检查是否在有效矩形内
-		if x >= radius && x < width-radius && y >= radius && y < height-radius {
-			return 1.0 // 中央矩形区域
-		}
-		// 边缘非圆角区域
-		return 1.0
+		alphaValue = 1.0
+		//// 非圆角区域：检查是否在有效矩形内
+		//if x >= radius && x < width-radius && y >= radius && y < height-radius {
+		//	return // 中央矩形区域
+		//}
+		//// 边缘非圆角区域
+		return
 	}
 	// 抗锯齿过渡处理：根据距离决定 alpha 渐变值
 	const transition = 1.0
 	innerRadius := float32(radius) - transition
 	// 完全在圆角内
 	if d <= innerRadius {
-		return 1.0
+		alphaValue = 1.0
+		return
 	}
 	// 完全在圆角外
 	if d >= float32(radius)+transition {
-		return 0.0
+		alphaValue = 0.0
+		return
 	}
 	// 在过渡区域内（平滑渐变）
-	return 1.0 - (d-innerRadius)/(2*transition)
+	alphaValue = 1.0 - (d-innerRadius)/(2*transition)
+	return
 }
 
 // 辅助函数：整数最小值
@@ -184,4 +258,44 @@ func min(a, b int32) int32 {
 		return a
 	}
 	return b
+}
+
+// DarkenColor 函数用于将给定的颜色按照指定因子进行暗化处理
+// 参数:
+//
+//	color: 原始颜色值，类型为 types.TColor
+//	factor: 暗化因子，取值范围通常为 0.0-1.0，值越大颜色越暗
+//
+// 返回值:
+//
+//	返回暗化后的颜色值，类型为 types.TColor
+func DarkenColor(color types.TColor, factor float64) types.TColor {
+	R := colors.Red(color)
+	G := colors.Green(color)
+	B := colors.Blue(color)
+
+	R = byte(round(float64(R) * (1.0 - factor)))
+	G = byte(round(float64(G) * (1.0 - factor)))
+	B = byte(round(float64(B) * (1.0 - factor)))
+	return colors.RGBToColor(R, G, B)
+}
+
+func DarkenFPColor(color *lcl.TFPColor, factor float64) {
+	r := uint16(round(float64(color.Red) * (1.0 - factor)))
+	g := uint16(round(float64(color.Green) * (1.0 - factor)))
+	b := uint16(round(float64(color.Blue) * (1.0 - factor)))
+	a := uint16(round(float64(color.Alpha) * (1.0 - factor)))
+	color.Red = r
+	color.Green = g
+	color.Blue = b
+	color.Alpha = a
+}
+func ColorToFPColor(color types.TColor, ratio float64) lcl.TFPColor {
+	colorR := colors.Red(color)
+	colorG := colors.Green(color)
+	colorB := colors.Blue(color)
+	r := round(float64(colorR)*(1-ratio) + float64(colorR)*ratio)
+	g := round(float64(colorG)*(1-ratio) + float64(colorG)*ratio)
+	b := round(float64(colorB)*(1-ratio) + float64(colorB)*ratio)
+	return lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
 }
