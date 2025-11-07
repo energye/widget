@@ -313,6 +313,14 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	canvas.DrawWithIntX2Graphic(iconX, iconY, m.icon.Graphic())
 }
 
+func (m *TButton) SetCaption(value string) {
+	m.SetText(value)
+}
+
+func (m *TButton) Caption() string {
+	return m.text
+}
+
 func (m *TButton) SetText(value string) {
 	//m.ICustomGraphicControl.SetCaption(value)
 	m.text = value
@@ -534,22 +542,27 @@ func truncateText(canvas lcl.ICanvas, text string, maxWidth int32) string {
 	}
 	ellipsis := "..."
 	ellipsisWidth := canvas.TextWidthWithUnicodestring(ellipsis)
-	// 如果连省略号都显示不下
 	if ellipsisWidth > maxWidth {
 		return ""
 	}
-	// 如果文本本身宽度小于可用宽度
 	textWidth := canvas.TextWidthWithUnicodestring(text)
 	if textWidth <= maxWidth {
 		return text
 	}
-	// 逐个字符尝试，找到合适的截断位置
+	// 二分查找截断位置
 	runes := []rune(text)
-	for i := len(runes) - 1; i > 0; i-- {
-		truncated := string(runes[:i]) + ellipsis
+	left, right := 0, len(runes)
+	for left < right {
+		mid := (left + right) / 2
+		truncated := string(runes[:mid]) + ellipsis
 		if canvas.TextWidthWithUnicodestring(truncated) <= maxWidth {
-			return truncated
+			left = mid + 1
+		} else {
+			right = mid
 		}
 	}
-	return ellipsis
+	if left == 0 {
+		return ellipsis
+	}
+	return string(runes[:left-1]) + ellipsis
 }
