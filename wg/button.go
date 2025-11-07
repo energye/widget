@@ -18,46 +18,56 @@ const (
 	RcRightBottom
 )
 
-type RoundedCorners = types.TSet
+type TRoundedCorners = types.TSet
 
 const iconMargin = 5
+
+type buttonState int32
+
+const (
+	bsDefault  buttonState = iota // 默认状态
+	bsEnter                       // 移入状态
+	bsDown                        // 按下状态
+	bsDisabled                    // 禁用状态
+)
+
+var (
+	defaultButtonColor        = colors.RGBToColor(66, 133, 244)
+	defaultButtonColorDisable = colors.RGBToColor(200, 200, 200)
+)
 
 // TButton 多功能自绘按钮
 // 颜色状态: 默认颜色, 移入颜色, 按下颜色, 禁用颜色
 // 当大小改变, 颜色改变 会重新绘制
 type TButton struct {
 	lcl.ICustomGraphicControl
-	startColor colors.TColor // 按钮起始渐变颜色
-	endColor   colors.TColor // 按钮结束渐变颜色
-
-	isEnter bool // 鼠标是否移入
-	isDown  bool // 鼠标是否按下
-
-	alpha    byte   // 透明度 0 ~ 255
-	radius   int32  // 圆角度
-	autoSize bool   // 自动大小
-	text     string // 文本
-
-	RoundedCorner            RoundedCorners // 按钮圆角方向，默认四角
-	TextOffSetX, TextOffSetY int32          // 文本显示偏移位置
+	isDisable                bool            // 是否禁用
+	alpha                    byte            // 透明度 0 ~ 255
+	radius                   int32           // 圆角度
+	autoSize                 bool            // 自动大小
+	text                     string          // 文本
+	RoundedCorner            TRoundedCorners // 按钮圆角方向，默认四角
+	TextOffSetX, TextOffSetY int32           // 文本显示偏移位置
 	// 图标
-	iconFavorite       lcl.IPicture // 按钮前置图标
-	iconClose          lcl.IPicture // 按钮关闭图标
-	iconCloseHighlight lcl.IPicture // 按钮关闭图标 高亮
+	iconFavorite       lcl.IPicture // 按钮前置图标, 靠左
+	iconClose          lcl.IPicture // 按钮关闭图标, 靠右
+	iconCloseHighlight lcl.IPicture // 按钮关闭图标移入高亮, 靠右
 	isEnterClose       bool         // 鼠标是否移入关闭图标
-	icon               lcl.IPicture // 按钮图标
+	icon               lcl.IPicture // 按钮图标, 中间
 	// 用户事件
 	onCloseClick lcl.TNotifyEvent
 	onPaint      lcl.TNotifyEvent
 	onMouseEnter lcl.TNotifyEvent
 	onMouseLeave lcl.TNotifyEvent
+	onClick      lcl.TNotifyEvent
 	onMouseDown  lcl.TMouseEvent
 	onMouseUp    lcl.TMouseEvent
-	// 是否禁用
-	IsDisable bool
-	// img pool
-	imgPool       lcl.ILazIntfImage
-	imgBitmapPool lcl.IBitmap
+	// 默认颜色, 移入颜色, 按下颜色, 禁用颜色
+	buttonState   buttonState
+	defaultColor  *TButtonColor
+	enterColor    *TButtonColor
+	downColor     *TButtonColor
+	disabledColor *TButtonColor
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -68,15 +78,13 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.SetParentColor(true)
 	m.Canvas().SetAntialiasingMode(types.AmOn)
 	m.SetControlStyle(m.ControlStyle().Include(types.CsParentBackground))
-	m.startColor = colors.ClBlue
-	m.endColor = colors.ClNavy
 	m.alpha = 180
 	m.radius = 10
 	m.ICustomGraphicControl.SetOnPaint(m.paint)
-	m.ICustomGraphicControl.SetOnMouseEnter(m.enter)
-	m.ICustomGraphicControl.SetOnMouseLeave(m.leave)
-	m.ICustomGraphicControl.SetOnMouseDown(m.down)
-	m.ICustomGraphicControl.SetOnMouseUp(m.up)
+	m.ICustomGraphicControl.SetOnMouseEnter(m.enter) // 进入
+	m.ICustomGraphicControl.SetOnMouseLeave(m.leave) // 移出
+	m.ICustomGraphicControl.SetOnMouseDown(m.down)   // 按下
+	m.ICustomGraphicControl.SetOnMouseUp(m.up)       // 抬起
 	m.ICustomGraphicControl.SetOnMouseMove(m.move)
 	m.RoundedCorner = types.NewSet(RcLeftTop, RcRightTop, RcLeftBottom, RcRightBottom)
 	m.iconFavorite = lcl.NewPicture()
@@ -88,9 +96,12 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.iconCloseHighlight.SetOnChange(m.iconChange)
 	m.icon.SetOnChange(m.iconChange)
 	// 创建图像对象
-	m.imgPool = lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha))
-	m.imgBitmapPool = lcl.NewBitmap()
-	m.imgBitmapPool.SetPixelFormat(types.Pf32bit)
+	m.defaultColor = NewButtonColor(defaultButtonColor, defaultButtonColor)
+	enterColor := DarkenColor(defaultButtonColor, 0.1)
+	m.enterColor = NewButtonColor(enterColor, enterColor)
+	downColor := DarkenColor(defaultButtonColor, 0.2)
+	m.downColor = NewButtonColor(downColor, downColor)
+	m.disabledColor = NewButtonColor(defaultButtonColorDisable, defaultButtonColorDisable)
 	// 销毁事件
 	m.SetOnDestroy(func() {
 		//fmt.Println("Graphic Button 释放资源")
@@ -111,28 +122,77 @@ func NewButton(owner lcl.IComponent) *TButton {
 		m.iconClose.Free()
 		m.iconCloseHighlight.Free()
 		m.icon.Free()
-		m.imgPool.Free()
-		m.imgBitmapPool.Free()
+		//m.imgPool.Free()
+		//m.imgBitmapPool.Free()
 	})
 	return m
 }
 
-func (m *TButton) iconChange(sender lcl.IObject) {
-	if m.IsDisable || !m.IsValid() {
-		return
-	}
-	m.Invalidate()
-}
-
 func (m *TButton) enter(sender lcl.IObject) {
-	if m.IsDisable || !m.IsValid() {
+	if m.isDisable || !m.IsValid() {
 		return
 	}
-	m.isEnter = true
+	m.buttonState = bsEnter
 	m.Invalidate()
 	if m.onMouseEnter != nil {
 		m.onMouseEnter(sender)
 	}
+}
+
+func (m *TButton) leave(sender lcl.IObject) {
+	m.buttonState = bsDefault
+	m.isEnterClose = false
+	if m.isDisable || !m.IsValid() {
+		return
+	}
+	m.Invalidate()
+	if m.onMouseLeave != nil {
+		m.onMouseLeave(sender)
+	}
+}
+
+func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+	if m.isDisable || !m.IsValid() {
+		return
+	}
+	if m.isCloseArea(X, Y) {
+		if m.onCloseClick != nil {
+			m.onCloseClick(sender)
+		}
+	} else {
+		m.buttonState = bsDown
+		m.Invalidate()
+		if m.onMouseDown != nil {
+			m.onMouseDown(sender, button, shift, X, Y)
+		}
+	}
+}
+
+func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+	if m.isDisable || !m.IsValid() {
+		return
+	}
+	m.buttonState = bsEnter
+	m.Invalidate()
+	if m.onMouseUp != nil {
+		m.onMouseUp(sender, button, shift, X, Y)
+	}
+}
+
+func (m *TButton) SetDisable(disable bool) {
+	m.isDisable = disable
+	if m.isDisable {
+		m.buttonState = bsDisabled
+	} else {
+		m.buttonState = bsDefault
+	}
+	m.Invalidate()
+}
+func (m *TButton) iconChange(sender lcl.IObject) {
+	if m.isDisable || !m.IsValid() {
+		return
+	}
+	m.Invalidate()
 }
 
 func (m *TButton) isCloseArea(X int32, Y int32) bool {
@@ -147,7 +207,7 @@ func (m *TButton) isCloseArea(X int32, Y int32) bool {
 
 func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y int32) {
 	lcl.Screen.SetCursor(types.CrDefault)
-	if m.IsDisable || !m.IsValid() {
+	if m.isDisable || !m.IsValid() {
 		return
 	}
 	if m.isCloseArea(X, Y) {
@@ -161,98 +221,26 @@ func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y i
 	}
 }
 
-func (m *TButton) leave(sender lcl.IObject) {
-	m.isEnter = false
-	m.isEnterClose = false
-	if m.IsDisable || !m.IsValid() {
-		return
-	}
-	m.Invalidate()
-	if m.onMouseLeave != nil {
-		m.onMouseLeave(sender)
-	}
-}
-
-func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
-	if m.IsDisable || !m.IsValid() {
-		return
-	}
-	if m.isCloseArea(X, Y) {
-		if m.onCloseClick != nil {
-			m.onCloseClick(sender)
-		}
-	} else {
-		m.isDown = true
-		m.Invalidate()
-		if m.onMouseDown != nil {
-			m.onMouseDown(sender, button, shift, X, Y)
-		}
-	}
-}
-
-func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
-	if m.IsDisable || !m.IsValid() {
-		return
-	}
-	m.isDown = false
-	m.Invalidate()
-	if m.onMouseUp != nil {
-		m.onMouseUp(sender, button, shift, X, Y)
-	}
-}
-
 func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect) {
-	startColor := m.startColor
-	endColor := m.endColor
-	text := m.text // m.Caption()
-
-	if !m.IsDisable && m.isEnter {
-		startColor = DarkenColor(startColor, 0.1)
-		endColor = DarkenColor(endColor, 0.1)
+	text := m.text
+	var color *TButtonColor
+	switch m.buttonState {
+	case bsDefault:
+		color = m.defaultColor
+	case bsEnter:
+		color = m.enterColor
+	case bsDown:
+		color = m.downColor
+	case bsDisabled:
+		color = m.disabledColor
 	}
-	if !m.IsDisable && m.isDown {
-		startColor = DarkenColor(startColor, 0.2)
-		endColor = DarkenColor(endColor, 0.2)
+	if color == nil {
+		return
 	}
-
-	// 获取起始颜色分量
-	startR := colors.Red(startColor)
-	startG := colors.Green(startColor)
-	startB := colors.Blue(startColor)
-	// 获取结束颜色分量
-	endR := colors.Red(endColor)
-	endG := colors.Green(endColor)
-	endB := colors.Blue(endColor)
-
-	if m.imgPool.Width() != rect.Width() || m.imgPool.Height() != rect.Height() {
-		m.imgPool.SetSize(rect.Width(), rect.Height())
-	}
-	if m.imgBitmapPool.Width() != rect.Width() || m.imgBitmapPool.Height() != rect.Height() {
-		m.imgBitmapPool.SetSize(rect.Width(), rect.Height())
-	}
-
-	// 处理垂直渐变（带抗锯齿圆角）
-	imgHeight := m.imgPool.Height()
-	imgWidth := m.imgPool.Width()
-	for y := 0; y < int(imgHeight); y++ {
-		ratio := float64(y) / float64(imgHeight-1)
-		r := round(float64(startR)*(1-ratio) + float64(endR)*ratio)
-		g := round(float64(startG)*(1-ratio) + float64(endG)*ratio)
-		b := round(float64(startB)*(1-ratio) + float64(endB)*ratio)
-		curColor := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
-		// 注意：Alpha会在内循环中为每个像素单独设置
-		for x := 0; x < int(imgWidth); x++ {
-			alphaFactor := m.calculateRoundedAlpha(int32(x), int32(y), imgWidth, imgHeight, m.radius)
-			actualAlpha := round(float64(m.alpha) * float64(alphaFactor))
-			curColor.Alpha = uint16(actualAlpha) << 8
-			m.imgPool.SetColors(int32(x), int32(y), curColor)
-		}
-	}
-	// 在位图并加载图像数据
-	m.imgBitmapPool.LoadFromIntfImage(m.imgPool)
+	color.paint(m.RoundedCorner, rect, m.alpha, m.radius)
 
 	// 绘制到目标画布
-	canvas.DrawWithIntX2Graphic(rect.Left, rect.Top, m.imgBitmapPool)
+	canvas.DrawWithIntX2Graphic(rect.Left, rect.Top, color.bitMap)
 
 	// 绘制按钮文字（在原始画布上绘制，确保文字不透明）
 	brush := canvas.BrushToBrush()
@@ -311,6 +299,10 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	canvas.DrawWithIntX2Graphic(iconX, iconY, m.icon.Graphic())
 }
 
+func (m *TButton) Disable() bool {
+	return m.isDisable
+}
+
 func (m *TButton) SetCaption(value string) {
 	m.SetText(value)
 }
@@ -320,7 +312,6 @@ func (m *TButton) Caption() string {
 }
 
 func (m *TButton) SetText(value string) {
-	//m.ICustomGraphicControl.SetCaption(value)
 	m.text = value
 	if m.autoSize {
 		lcl.RunOnMainThreadAsync(func(id uint32) {
@@ -411,14 +402,52 @@ func (m *TButton) SetOnMouseLeave(fn lcl.TNotifyEvent) {
 	m.onMouseLeave = fn
 }
 
-func (m *TButton) SetStartColor(color colors.TColor) {
-	m.startColor = color
+func (m *TButton) SetDefaultColor(start, end colors.TColor) {
+	m.defaultColor.start = start
+	m.defaultColor.end = end
+	m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
 
-func (m *TButton) SetEndColor(color colors.TColor) {
-	m.endColor = color
+func (m *TButton) DefaultColor() (start, end colors.TColor) {
+	start = m.defaultColor.start
+	end = m.defaultColor.end
+	return
 }
 
+func (m *TButton) SetEnterColor(start, end colors.TColor) {
+	m.enterColor.start = start
+	m.enterColor.end = end
+	m.enterColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+}
+
+func (m *TButton) EnterColor() (start, end colors.TColor) {
+	start = m.enterColor.start
+	end = m.enterColor.end
+	return
+}
+
+func (m *TButton) SetDownColor(start, end colors.TColor) {
+	m.downColor.start = start
+	m.downColor.end = end
+	m.downColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+}
+
+func (m *TButton) DownColor() (start, end colors.TColor) {
+	start = m.downColor.start
+	end = m.downColor.end
+	return
+}
+
+func (m *TButton) SetDisabledColor(start, end colors.TColor) {
+	m.disabledColor.start = start
+	m.disabledColor.end = end
+	m.disabledColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+}
+func (m *TButton) DisabledColor() (start, end colors.TColor) {
+	start = m.disabledColor.start
+	end = m.disabledColor.end
+	return
+}
 func (m *TButton) SetAlpha(alpha byte) {
 	m.alpha = alpha
 }
@@ -431,85 +460,15 @@ func (m *TButton) Free() {
 	m.ICustomGraphicControl.Free()
 }
 
-// 计算圆角矩形中某点的抗锯齿透明度因子 (0.0 ~ 1.0)
-func (m *TButton) calculateRoundedAlpha(x, y, width, height, radius int32) float32 {
-	// 计算实际可用最大半径（不超过尺寸限制）
-	maxRadius := min(width/2, height/2)
-	if radius > maxRadius {
-		radius = maxRadius
-	}
-	// 如果半径被限制为0，直接返回不透明
-	if radius <= 0 {
-		return 1.0
-	}
-
-	var (
-		cornerX, cornerY int32
-		d                float32
-		inCorner         bool
-	)
-
-	// 左上角区域
-	if m.RoundedCorner.In(RcLeftTop) && x < radius && y < radius {
-		cornerX = radius
-		cornerY = radius
-		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
-		inCorner = true
-	} else if m.RoundedCorner.In(RcRightTop) && x >= width-radius && y < radius {
-		// 右上角区域
-		cornerX = width - radius - 1
-		cornerY = radius
-		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
-		inCorner = true
-	} else if m.RoundedCorner.In(RcLeftBottom) && x < radius && y >= height-radius {
-		// 左下角区域
-		cornerX = radius
-		cornerY = height - radius - 1
-		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
-		inCorner = true
-	} else if m.RoundedCorner.In(RcRightBottom) && x >= width-radius && y >= height-radius {
-		// 右下角区域
-		cornerX = width - radius - 1
-		cornerY = height - radius - 1
-		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
-		inCorner = true
-	}
-
-	if !inCorner {
-		// 非圆角区域：检查是否在有效矩形内
-		if x >= radius && x < width-radius &&
-			y >= radius && y < height-radius {
-			return 1.0 // 中央矩形区域
-		}
-		// 边缘非圆角区域
-		return 1.0
-	}
-
-	// 抗锯齿过渡区域（像素宽度）
-	const transition = 1.0
-	innerRadius := float32(radius) - transition
-
-	// 完全在圆角内
-	if d <= innerRadius {
-		return 1.0
-	}
-	// 完全在圆角外
-	if d >= float32(radius)+transition {
-		return 0.0
-	}
-
-	// 在过渡区域内（平滑渐变）
-	return 1.0 - (d-innerRadius)/(2*transition)
-}
-
-// 辅助函数：整数最小值
-func min(a, b int32) int32 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
+// DarkenColor 函数用于将给定的颜色按照指定因子进行暗化处理
+// 参数:
+//
+//	color: 原始颜色值，类型为 types.TColor
+//	factor: 暗化因子，取值范围通常为 0.0-1.0，值越大颜色越暗
+//
+// 返回值:
+//
+//	返回暗化后的颜色值，类型为 types.TColor
 func DarkenColor(color types.TColor, factor float64) types.TColor {
 	R := colors.Red(color)
 	G := colors.Green(color)

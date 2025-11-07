@@ -56,8 +56,8 @@ func (m *TTab) initScrollBtn() {
 	m.scrollLeftBtn.SetLeft(0)
 	m.scrollLeftBtn.SetRadius(0)
 	m.scrollLeftBtn.SetAlpha(255)
-	m.scrollLeftBtn.SetStartColor(colors.ClGray)
-	m.scrollLeftBtn.SetEndColor(colors.ClGray)
+	//m.scrollLeftBtn.SetStartColor(colors.ClGray)
+	//m.scrollLeftBtn.SetEndColor(colors.ClGray)
 	m.scrollLeftBtn.SetParent(m)
 
 	m.scrollRightBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-right.png")
@@ -65,8 +65,8 @@ func (m *TTab) initScrollBtn() {
 	m.scrollRightBtn.SetHeight(defaultHeight)
 	m.scrollRightBtn.SetRadius(0)
 	m.scrollRightBtn.SetAlpha(255)
-	m.scrollRightBtn.SetStartColor(colors.ClGray)
-	m.scrollRightBtn.SetEndColor(colors.ClGray)
+	//m.scrollRightBtn.SetStartColor(colors.ClGray)
+	//m.scrollRightBtn.SetEndColor(colors.ClGray)
 	m.scrollRightBtn.SetLeft(scrollBtnWidth)
 	m.scrollRightBtn.SetParent(m)
 
@@ -93,8 +93,8 @@ func (m *TTab) NewPage() *TPage {
 	button.SetText(defaultPrefix + strconv.Itoa(len(m.pages)))
 	button.Font().SetSize(9)
 	button.Font().SetColor(colors.Cl3DFace)
-	button.SetStartColor(defaultColor)
-	button.SetEndColor(defaultColor)
+	//button.SetStartColor(defaultColor)
+	//button.SetEndColor(defaultColor)
 	button.RoundedCorner = button.RoundedCorner.Exclude(RcLeftBottom).Exclude(RcRightBottom)
 	button.SetRadius(0)
 	button.SetAlpha(255)
@@ -206,13 +206,13 @@ func (m *TPage) Active(active bool) {
 	m.active = active
 	if active {
 		m.ICustomPanel.Show()
-		m.button.SetStartColor(activeColor)
-		m.button.SetEndColor(activeColor)
+		//m.button.SetStartColor(activeColor)
+		//m.button.SetEndColor(activeColor)
 		m.button.Invalidate()
 	} else {
 		m.ICustomPanel.Hide()
-		m.button.SetStartColor(defaultColor)
-		m.button.SetEndColor(defaultColor)
+		//m.button.SetStartColor(defaultColor)
+		//m.button.SetEndColor(defaultColor)
 		m.button.Invalidate()
 	}
 }
