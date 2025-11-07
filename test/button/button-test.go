@@ -153,17 +153,14 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 				i := 0
 				str := "自DEF动CD宽AB"
 				for {
-					time.Sleep(time.Second / 10)
 					if i > 10 {
+						time.Sleep(time.Second)
 						i = 0
-						lcl.RunOnMainThreadAsync(func(id uint32) {
-							cus.SetText(str)
-						})
+						cus.SetText(str)
 					} else {
+						time.Sleep(time.Second / 10)
 						i++
-						lcl.RunOnMainThreadAsync(func(id uint32) {
-							cus.SetText(cus.Text() + str)
-						})
+						cus.SetText(cus.Text() + str)
 					}
 				}
 			}()
@@ -189,17 +186,14 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 				i := 0
 				str := "自ab动CD宽ef"
 				for {
-					time.Sleep(time.Second / 5)
 					if i > 10 {
+						time.Sleep(time.Second)
 						i = 0
-						lcl.RunOnMainThreadAsync(func(id uint32) {
-							cus7.SetText(str)
-						})
+						cus7.SetText(str)
 					} else {
+						time.Sleep(time.Second / 5)
 						i++
-						lcl.RunOnMainThreadAsync(func(id uint32) {
-							cus7.SetText(cus7.Text() + str)
-						})
+						cus7.SetText(cus7.Text() + str)
 					}
 				}
 			}()

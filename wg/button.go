@@ -7,7 +7,6 @@ import (
 	"math"
 	"path/filepath"
 	"strings"
-	"sync"
 )
 
 type RoundedCorner = int32
@@ -23,6 +22,9 @@ type RoundedCorners = types.TSet
 
 const iconMargin = 5
 
+// TButton 多功能自绘按钮
+// 颜色状态: 默认颜色, 移入颜色, 按下颜色, 禁用颜色
+// 当大小改变, 颜色改变 会重新绘制
 type TButton struct {
 	lcl.ICustomGraphicControl
 	startColor colors.TColor // 按钮起始渐变颜色
@@ -56,7 +58,6 @@ type TButton struct {
 	// img pool
 	imgPool       lcl.ILazIntfImage
 	imgBitmapPool lcl.IBitmap
-	imgPoolLock   sync.Mutex
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -223,18 +224,16 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	endG := colors.Green(endColor)
 	endB := colors.Blue(endColor)
 
-	img := m.imgPool
-	if img.Width() != rect.Width() || img.Height() != rect.Height() {
-		img.SetSize(rect.Width(), rect.Height())
+	if m.imgPool.Width() != rect.Width() || m.imgPool.Height() != rect.Height() {
+		m.imgPool.SetSize(rect.Width(), rect.Height())
 	}
-	tempBMap := m.imgBitmapPool
-	if tempBMap.Width() != rect.Width() || tempBMap.Height() != rect.Height() {
-		tempBMap.SetSize(rect.Width(), rect.Height())
+	if m.imgBitmapPool.Width() != rect.Width() || m.imgBitmapPool.Height() != rect.Height() {
+		m.imgBitmapPool.SetSize(rect.Width(), rect.Height())
 	}
 
-	// 创建垂直渐变（带抗锯齿圆角）
-	imgHeight := img.Height()
-	imgWidth := img.Width()
+	// 处理垂直渐变（带抗锯齿圆角）
+	imgHeight := m.imgPool.Height()
+	imgWidth := m.imgPool.Width()
 	for y := 0; y < int(imgHeight); y++ {
 		ratio := float64(y) / float64(imgHeight-1)
 		r := round(float64(startR)*(1-ratio) + float64(endR)*ratio)
@@ -246,12 +245,11 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 			alphaFactor := m.calculateRoundedAlpha(int32(x), int32(y), imgWidth, imgHeight, m.radius)
 			actualAlpha := round(float64(m.alpha) * float64(alphaFactor))
 			curColor.Alpha = uint16(actualAlpha) << 8
-			img.SetColors(int32(x), int32(y), curColor)
+			m.imgPool.SetColors(int32(x), int32(y), curColor)
 		}
 	}
-
-	// 创建临时位图并加载图像数据
-	tempBMap.LoadFromIntfImage(img)
+	// 在位图并加载图像数据
+	m.imgBitmapPool.LoadFromIntfImage(m.imgPool)
 
 	// 绘制到目标画布
 	canvas.DrawWithIntX2Graphic(rect.Left, rect.Top, m.imgBitmapPool)
