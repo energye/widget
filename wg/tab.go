@@ -93,12 +93,13 @@ func (m *TTab) NewPage() *TPage {
 	button.SetText(defaultPrefix + strconv.Itoa(len(m.pages)))
 	button.Font().SetSize(9)
 	button.Font().SetColor(colors.Cl3DFace)
-	//button.SetStartColor(defaultColor)
-	//button.SetEndColor(defaultColor)
 	button.RoundedCorner = button.RoundedCorner.Exclude(RcLeftBottom).Exclude(RcRightBottom)
 	button.SetRadius(0)
 	button.SetAlpha(255)
 	button.SetHeight(defaultHeight)
+	button.SetDefaultColor(defaultColor, defaultColor)
+	button.SetEnterColor(DarkenColor(defaultColor, 0.1), DarkenColor(defaultColor, 0.1))
+	button.SetDownColor(DarkenColor(defaultColor, 0.2), DarkenColor(defaultColor, 0.2))
 	button.SetParent(m)
 	page.button = button
 
@@ -206,13 +207,11 @@ func (m *TPage) Active(active bool) {
 	m.active = active
 	if active {
 		m.ICustomPanel.Show()
-		//m.button.SetStartColor(activeColor)
-		//m.button.SetEndColor(activeColor)
+		m.button.SetDefaultColor(activeColor, activeColor)
 		m.button.Invalidate()
 	} else {
 		m.ICustomPanel.Hide()
-		//m.button.SetStartColor(defaultColor)
-		//m.button.SetEndColor(defaultColor)
+		m.button.SetDefaultColor(defaultColor, defaultColor)
 		m.button.Invalidate()
 	}
 }
