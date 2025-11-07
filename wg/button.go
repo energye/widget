@@ -140,11 +140,11 @@ func (m *TButton) enter(sender lcl.IObject) {
 }
 
 func (m *TButton) leave(sender lcl.IObject) {
-	m.buttonState = bsDefault
-	m.isEnterClose = false
 	if m.isDisable || !m.IsValid() {
 		return
 	}
+	m.isEnterClose = false
+	m.buttonState = bsDefault
 	m.Invalidate()
 	if m.onMouseLeave != nil {
 		m.onMouseLeave(sender)
@@ -186,7 +186,9 @@ func (m *TButton) SetDisable(disable bool) {
 	} else {
 		m.buttonState = bsDefault
 	}
-	m.Invalidate()
+	lcl.RunOnMainThreadAsync(func(id uint32) {
+		m.Invalidate()
+	})
 }
 func (m *TButton) iconChange(sender lcl.IObject) {
 	if m.isDisable || !m.IsValid() {
@@ -196,7 +198,7 @@ func (m *TButton) iconChange(sender lcl.IObject) {
 }
 
 func (m *TButton) isCloseArea(X int32, Y int32) bool {
-	if !m.IsValid() {
+	if m.isDisable || !m.IsValid() {
 		return false
 	}
 	rect := m.ClientRect()
@@ -206,10 +208,10 @@ func (m *TButton) isCloseArea(X int32, Y int32) bool {
 }
 
 func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y int32) {
-	lcl.Screen.SetCursor(types.CrDefault)
 	if m.isDisable || !m.IsValid() {
 		return
 	}
+	lcl.Screen.SetCursor(types.CrDefault)
 	if m.isCloseArea(X, Y) {
 		if !m.isEnterClose {
 			m.isEnterClose = true
@@ -402,9 +404,14 @@ func (m *TButton) SetOnMouseLeave(fn lcl.TNotifyEvent) {
 	m.onMouseLeave = fn
 }
 
+// SetDefaultColor 设置按钮的默认颜色
+// start: 按钮默认状态下的起始颜色
+// end: 按钮默认状态下的结束颜色
 func (m *TButton) SetDefaultColor(start, end colors.TColor) {
+	// 更新按钮默认颜色配置
 	m.defaultColor.start = start
 	m.defaultColor.end = end
+	// 强制重绘按钮界面
 	m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
 

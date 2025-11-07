@@ -49,6 +49,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	box.SetBevelOuter(types.BvNone)
 	//box.SetBounds(0, 0, 800, 600)
 	box.SetAlign(types.AlClient)
+	//box.SetParentColor(false)
 	box.SetBorderStyleToBorderStyle(types.BsNone)
 	box.SetParent(m)
 
@@ -63,6 +64,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		}
 		cus := wg.NewButton(m)
 		cus.SetShowHint(true)
+		cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
 		cus.SetText("上圆角")
 		cus.SetHint("上圆角上圆角")
 		cus.Font().SetSize(12)
@@ -72,7 +74,6 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		start, end := cus.DefaultColor()
 		cus.SetEnterColor(wg.DarkenColor(start, 0.1), wg.DarkenColor(end, 0.1))
 		cus.SetDownColor(wg.DarkenColor(start, 0.2), wg.DarkenColor(end, 0.2))
-		cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
 		cus.SetOnCloseClick(func(sender lcl.IObject) {
 			fmt.Println("点击了 X")
 		})
@@ -88,25 +89,25 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			defaultStartColor = colors.RGBToColor(255, 100, 0)
 			defaultEndColor   = colors.RGBToColor(69, 81, 143)
 		)
+		cus2.SetRadius(20)
+		cus2.SetAlpha(255)
+		cus2.Font().SetColor(colors.ClWhite)
 		cus2.SetDefaultColor(defaultStartColor, defaultEndColor)
 		cus2.SetEnterColor(wg.DarkenColor(defaultStartColor, 0.1), wg.DarkenColor(defaultEndColor, 0.1))
 		cus2.SetDownColor(wg.DarkenColor(defaultStartColor, 0.2), wg.DarkenColor(defaultEndColor, 0.2))
-		cus2.Font().SetColor(colors.ClWhite)
-		cus2.SetRadius(20)
-		cus2.SetAlpha(255)
 		cus2.SetOnClick(click)
 		cus2.SetParent(box)
 
 		cus3 := wg.NewButton(m)
 		cus3.SetText("小圆角")
 		cus3.SetBoundsRect(types.TRect{Left: 50, Top: 250, Right: 250, Bottom: 320})
+		cus3.Font().SetColor(colors.ClYellow)
+		cus3.SetRadius(8)
+		cus3.SetAlpha(255)
 		cus3.SetDefaultColor(colors.RGBToColor(0, 180, 0), colors.RGBToColor(0, 100, 0))
 		start, end = cus3.DefaultColor()
 		cus3.SetEnterColor(wg.DarkenColor(start, 0.1), wg.DarkenColor(end, 0.1))
 		cus3.SetDownColor(wg.DarkenColor(start, 0.2), wg.DarkenColor(end, 0.2))
-		cus3.Font().SetColor(colors.ClYellow)
-		cus3.SetRadius(8)
-		cus3.SetAlpha(255)
 		cus3.SetOnClick(click)
 		cus3.SetParent(box)
 
@@ -152,7 +153,8 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			}
 		}
 		disableBtn := wg.NewButton(m)
-		disableBtn.SetText("禁用/启用 按钮")
+		//disableBtn := lcl.NewButton(m)
+		disableBtn.SetCaption("禁用/启用 按钮")
 		disableBtnRect := types.TRect{Left: 250, Top: 450}
 		disableBtnRect.SetSize(150, 30)
 		disableBtn.SetBoundsRect(disableBtnRect)
@@ -165,6 +167,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			setDisable(cus5)
 		})
 		disableBtn.SetParent(box)
+
 		{
 			cus := wg.NewButton(m)
 			cus.SetShowHint(true)
@@ -176,6 +179,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			rect.SetWidth(100)
 			rect.SetHeight(30)
 			cus.SetBoundsRect(rect)
+			cus.SetAutoSize(true)
 			//cus.SetStartColor(colors.RGBToColor(86, 88, 93))
 			//cus.SetEndColor(colors.RGBToColor(86, 88, 93))
 			cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
@@ -184,7 +188,6 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			})
 			cus.SetIconFavorite(filepath.Join(examplePath, "resources", "icon.png"))
 			cus.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
-			cus.SetAutoSize(true)
 			cus.SetOnClick(click)
 			cus.SetParent(box)
 			go func() {
