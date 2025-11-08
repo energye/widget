@@ -1,6 +1,7 @@
 package wg
 
 import (
+	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
@@ -128,15 +129,15 @@ func (m *TTab) NewPage() *TPage {
 
 	m.pages = append(m.pages, page) // 添加到页列表
 	page.initEvent()                // 初始化事件
-	m.HiddenAllActivated()          // 隐藏所有激活的
+	m.HideAllActivated()            // 隐藏所有激活的
 	page.Active(true)               // 激活当前页
 	m.RecalculatePosition()         // 重新计算位置
 
 	tabSheet.SetOnShow(func(sender lcl.IObject) {
-		//fmt.Println("sheet.SetOnShow")
+		fmt.Println("sheet.SetOnShow", page.button.Text())
 	})
 	tabSheet.SetOnHide(func(sender lcl.IObject) {
-		//fmt.Println("sheet.SetOnHide")
+		fmt.Println("sheet.SetOnHide", page.button.Text())
 	})
 	return page
 }
@@ -190,15 +191,6 @@ func (m *TTab) scrollRight() {
 	}
 }
 
-func (m *TTab) scrollRightEnd() {
-	m.triggerScrollStop = false
-	lcl.RunOnMainThreadAsync(func(id uint32) {
-		for !m.triggerScrollStop {
-			m.scrollRight()
-		}
-	})
-}
-
 // RecalculatePosition 重新计算位置, 在隐藏/移除时使用
 func (m *TTab) RecalculatePosition() {
 	var widths int32 = m.scrollOffset
@@ -206,12 +198,14 @@ func (m *TTab) RecalculatePosition() {
 		widths += scrollBtnWidth + scrollBtnMargin
 	}
 	for _, page := range m.pages {
-		br := page.button.BoundsRect()
-		width := br.Width()
-		br.Left = widths
-		br.SetWidth(width)
-		page.button.SetBoundsRect(br)
-		widths += br.Width()
+		if page.button.Visible() {
+			br := page.button.BoundsRect()
+			width := br.Width()
+			br.Left = widths
+			br.SetWidth(width)
+			page.button.SetBoundsRect(br)
+			widths += br.Width()
+		}
 	}
 	m.widths = widths
 	m.scrollBtnPosition()
@@ -219,14 +213,18 @@ func (m *TTab) RecalculatePosition() {
 
 // 滚动导航按钮 位置调整
 func (m *TTab) scrollBtnPosition() {
-	m.scrollLeftBtn.SetLeft(2)
-	m.scrollLeftBtn.BringToFront()
-	m.scrollRightBtn.SetLeft(m.Width() - scrollBtnWidth - 2)
-	m.scrollRightBtn.BringToFront()
+	if m.scrollLeftBtn.Visible() {
+		m.scrollLeftBtn.SetLeft(2)
+		m.scrollLeftBtn.BringToFront()
+	}
+	if m.scrollRightBtn.Visible() {
+		m.scrollRightBtn.SetLeft(m.Width() - scrollBtnWidth - 2)
+		m.scrollRightBtn.BringToFront()
+	}
 }
 
-// HiddenAllActivated 隐藏所有激活页面
-func (m *TTab) HiddenAllActivated() {
+// HideAllActivated 隐藏所有激活页面
+func (m *TTab) HideAllActivated() {
 	for _, page := range m.pages {
 		if page.active {
 			page.Active(false)
@@ -257,7 +255,7 @@ func (m *TTab) RemovePage(removePage *TPage) {
 			showPage = m.pages[0] // 显示第一个 page
 		}
 		if showPage != nil {
-			m.HiddenAllActivated()
+			m.HideAllActivated()
 			showPage.Active(true)
 		}
 	}
@@ -281,7 +279,7 @@ func (m *TPage) Remove() {
 	m.tab = nil
 }
 
-// 激活自己, 会取消激活其它的
+// 激活自己, 会取消其它激活的
 func (m *TPage) Active(active bool) {
 	m.active = active
 	if active {
@@ -299,17 +297,21 @@ func (m *TPage) Active(active bool) {
 
 // 隐藏自己, button 和 page 同时隐藏
 func (m *TPage) Hide() {
-
+	m.button.Hide()
+	m.Active(false)
+	m.tab.RecalculatePosition()
 }
 
 // 显示自己, button 和 page 同时显示
 func (m *TPage) Show() {
-
+	m.button.Show()
+	m.Active(true)
+	m.tab.RecalculatePosition()
 }
 
 func (m *TPage) initEvent() {
 	m.button.SetOnClick(func(sender lcl.IObject) {
-		m.tab.HiddenAllActivated()
+		m.tab.HideAllActivated()
 		m.Active(true)
 	})
 	m.button.SetOnCloseClick(func(sender lcl.IObject) {
@@ -322,8 +324,7 @@ func (m *TPage) initEvent() {
 		})
 	})
 	m.SetOnResize(func(sender lcl.IObject) {
-		br := m.BoundsRect()
-		println("Width:", br.Width())
+		// 滚动导航按钮 位置调整
 		m.tab.scrollBtnPosition()
 	})
 }

@@ -59,7 +59,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	tab.SetParent(box)
 	tab.SetBounds(0, 0, box.Width(), box.Height())
 	tab.SetAlign(types.AlClient)
-	tab.EnableScrollButton(false)
+	//tab.EnableScrollButton(false)
 	tab.RecalculatePosition()
 
 	addPage := func(count int) {
