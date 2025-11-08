@@ -4,37 +4,46 @@ import (
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
+	"math"
 )
 
-type TEnableButtonBorder = int32
+// 按钮方向
+type TButtonBorderDirection = int32
 
 const (
-	EbbLeft TEnableButtonBorder = iota
-	EbbRight
-	EbbTop
-	EbbBottom
+	BbdLeft TButtonBorderDirection = iota
+	BbdTop
+	BbdRight
+	BbdBottom
 )
 
-type TButtonBorders = types.TSet
+// 按钮方向集合
+type TButtonBorderDirections = types.TSet
 
 // TButtonColor 按钮颜色
 type TButtonColor struct {
-	start   colors.TColor     // 按钮起始渐变颜色
-	end     colors.TColor     // 按钮结束渐变颜色
-	border  colors.TColor     // 按钮边框颜色, 启用边框方向才有作用
-	borders TButtonBorders    // 按钮显示边框方向
-	img     lcl.ILazIntfImage // 缓存
-	bitMap  lcl.IBitmap       // 缓存
-	type_   int32             // 按钮类型, 自定义, 区分类型
+	start  colors.TColor     // 按钮起始渐变颜色
+	end    colors.TColor     // 按钮结束渐变颜色
+	Border TButtonBorder     // 按钮边框
+	img    lcl.ILazIntfImage // 缓存
+	bitMap lcl.IBitmap       // 缓存
+	type_  int32             // 按钮类型, 自定义, 区分类型
 }
 
-func NewButtonColor(start, end colors.TColor) *TButtonColor {
+type TButtonBorder struct {
+	Color       colors.TColor           // 按钮边框颜色, 启用边框方向才有作用
+	Direction   TButtonBorderDirections // 按钮显示边框方向
+	Width       int32                   // 边框宽度
+	LeftWidth   int32                   // 左宽度
+	TopWidth    int32                   // 上宽度
+	RightWidth  int32                   // 右宽度
+	BottomWidth int32                   // 下宽度
+}
+
+func NewButtonColor() *TButtonColor {
 	m := &TButtonColor{
-		start:   start,
-		end:     end,
-		img:     lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha)),
-		bitMap:  lcl.NewBitmap(),
-		borders: types.NewSet(),
+		img:    lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha)),
+		bitMap: lcl.NewBitmap(),
 	}
 	m.bitMap.SetPixelFormat(types.Pf32bit)
 	return m
@@ -108,8 +117,8 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 		b := round(float64(startB)*(1-ratio) + float64(endB)*ratio)
 		color := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
 		borderColor := color
-		if m.border != 0 {
-			borderColor = ColorToFPColor(m.border, ratio)
+		if m.Border.Color != 0 {
+			borderColor = ColorToFPColor(m.Border.Color, ratio)
 		} else {
 			DarkenFPColor(&borderColor, 0.5)
 		}
@@ -118,33 +127,32 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 			alphaFactor, corners := m.calculateRoundedAlpha(roundedCorners, x, y, imgWidth, imgHeight, radius)
 			_ = corners
 			isBorder := false
-			if m.borders != 0 {
-				if alphaFactor < 1.0 {
-					// 圆角
-					if m.borders.In(EbbLeft) && (corners == RcLeftTop || corners == RcLeftBottom) {
+			if m.Border.Direction != 0 { // 启用了边框
+				if alphaFactor < 1.0 { // 圆角范围内
+					if m.Border.Direction.In(BbdLeft) && (corners == RcLeftTop || corners == RcLeftBottom) {
 						// 左边框
 						isBorder = true
-					} else if m.borders.In(EbbRight) && (corners == RcRightTop || corners == RcRightBottom) {
-						// 右边框
-						isBorder = true
-					} else if m.borders.In(EbbTop) && (corners == RcRightTop || corners == RcLeftTop) {
+					} else if m.Border.Direction.In(BbdTop) && (corners == RcRightTop || corners == RcLeftTop) {
 						// 上边框
 						isBorder = true
-					} else if m.borders.In(EbbBottom) && (corners == RcLeftBottom || corners == RcRightBottom) {
+					} else if m.Border.Direction.In(BbdRight) && (corners == RcRightTop || corners == RcRightBottom) {
+						// 右边框
+						isBorder = true
+					} else if m.Border.Direction.In(BbdBottom) && (corners == RcLeftBottom || corners == RcRightBottom) {
 						// 下边框
 						isBorder = true
 					}
-				} else {
-					if m.borders.In(EbbTop) && y < borderWidth && x <= w {
-						// 上边框
-						isBorder = true
-					} else if m.borders.In(EbbLeft) && x < borderWidth && y < h {
+				} else { // 圆角外
+					if m.Border.Direction.In(BbdLeft) && x < borderWidth && y < h {
 						// 左边框
 						isBorder = true
-					} else if m.borders.In(EbbRight) && x >= w-borderWidth && y < h {
+					} else if m.Border.Direction.In(BbdTop) && y < borderWidth && x <= w {
+						// 上边框
+						isBorder = true
+					} else if m.Border.Direction.In(BbdRight) && x >= w-borderWidth && y < h {
 						// 右边框
 						isBorder = true
-					} else if m.borders.In(EbbBottom) && x < w && y >= h-borderWidth {
+					} else if m.Border.Direction.In(BbdBottom) && x < w && y >= h-borderWidth {
 						// 下边框
 						isBorder = true
 					}
@@ -162,6 +170,11 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 	}
 	// 将处理好的图像数据加载到位图对象中，供后续使用
 	m.bitMap.LoadFromIntfImage(m.img)
+}
+
+func (m *TButtonColor) SetColor(start, end colors.TColor) {
+	m.start = start
+	m.end = end
 }
 
 // calculateRoundedAlpha 根据给定的圆角信息计算按钮颜色在指定坐标点 (x, y) 处的 alpha 值，
@@ -280,16 +293,54 @@ func DarkenColor(color types.TColor, factor float64) types.TColor {
 	return colors.RGBToColor(R, G, B)
 }
 
+// LightenColor 函数用于将给定的颜色按照指定因子进行亮化处理
+// 参数:
+//
+//	color: 原始颜色值，类型为 types.TColor
+//	factor: 亮化因子，取值范围通常为 0.0-1.0，值越大颜色越亮
+//
+// 返回值:
+//
+//	返回亮化后的颜色值，类型为 types.TColor
+func LightenColor(color types.TColor, factor float64) types.TColor {
+	R := colors.Red(color)
+	G := colors.Green(color)
+	B := colors.Blue(color)
+	R = byte(round(float64(R) + (255.0-float64(R))*factor))
+	G = byte(round(float64(G) + (255.0-float64(G))*factor))
+	B = byte(round(float64(B) + (255.0-float64(B))*factor))
+	return colors.RGBToColor(R, G, B)
+}
+
+// GrayColor 函数用于将给定的颜色转换为灰度颜色
+// 参数:
+//
+//	color: 原始颜色值，类型为 types.TColor
+//
+// 返回值:
+//
+//	返回灰度颜色值，类型为 types.TColor
+func GrayColor(color types.TColor) types.TColor {
+	R := colors.Red(color)
+	G := colors.Green(color)
+	B := colors.Blue(color)
+	// 使用标准的灰度转换公式: Gray = 0.299*R + 0.587*G + 0.114*B
+	gray := byte(round(0.299*float64(R) + 0.587*float64(G) + 0.114*float64(B)))
+	return colors.RGBToColor(gray, gray, gray)
+}
+
+// DarkenFPColor 通过给定因子降低颜色的亮度
+// color: 指向TFPColor结构体的指针，表示要处理的颜色
+// factor: 浮点数，表示变暗因子，取值范围通常在0.0-1.0之间，值越大颜色越暗
 func DarkenFPColor(color *lcl.TFPColor, factor float64) {
 	r := uint16(round(float64(color.Red) * (1.0 - factor)))
 	g := uint16(round(float64(color.Green) * (1.0 - factor)))
 	b := uint16(round(float64(color.Blue) * (1.0 - factor)))
-	a := uint16(round(float64(color.Alpha) * (1.0 - factor)))
 	color.Red = r
 	color.Green = g
 	color.Blue = b
-	color.Alpha = a
 }
+
 func ColorToFPColor(color types.TColor, ratio float64) lcl.TFPColor {
 	colorR := colors.Red(color)
 	colorG := colors.Green(color)
@@ -298,4 +349,16 @@ func ColorToFPColor(color types.TColor, ratio float64) lcl.TFPColor {
 	g := round(float64(colorG)*(1-ratio) + float64(colorG)*ratio)
 	b := round(float64(colorB)*(1-ratio) + float64(colorB)*ratio)
 	return lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
+}
+
+func round(v float64) float64 {
+	return math.Round(v)
+}
+
+func sqr(x int32) int32 {
+	return x * x
+}
+
+func sqrt(v float64) float32 {
+	return float32(math.Sqrt(v))
 }

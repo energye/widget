@@ -4,7 +4,6 @@ import (
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
-	"math"
 	"path/filepath"
 	"strings"
 )
@@ -96,23 +95,19 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.iconCloseHighlight.SetOnChange(m.iconChange)
 	m.icon.SetOnChange(m.iconChange)
 	// 创建按钮颜色对象
-	m.defaultColor = NewButtonColor(defaultButtonColor, defaultButtonColor)
+	m.defaultColor = NewButtonColor()
 	m.defaultColor.type_ = bsDefault
-	m.defaultColor.borders = types.NewSet(EbbLeft, EbbRight, EbbTop, EbbBottom)
-
-	enterColor := DarkenColor(defaultButtonColor, 0.1)
-	m.enterColor = NewButtonColor(enterColor, enterColor)
+	m.enterColor = NewButtonColor()
 	m.enterColor.type_ = bsEnter
-	m.enterColor.borders = types.NewSet(EbbLeft, EbbRight, EbbTop, EbbBottom)
-
-	downColor := DarkenColor(defaultButtonColor, 0.2)
-	m.downColor = NewButtonColor(downColor, downColor)
+	m.downColor = NewButtonColor()
 	m.downColor.type_ = bsDown
-	m.downColor.borders = types.NewSet(EbbLeft, EbbRight, EbbTop, EbbBottom)
-
-	m.disabledColor = NewButtonColor(defaultButtonColorDisable, defaultButtonColorDisable)
+	m.disabledColor = NewButtonColor()
 	m.disabledColor.type_ = bsDisabled
-	m.disabledColor.borders = types.NewSet(EbbLeft, EbbRight, EbbTop, EbbBottom)
+	m.SetDisabledColor(defaultButtonColorDisable, defaultButtonColorDisable)
+
+	m.SetColor(defaultButtonColor)
+	m.SetBorderColor(defaultButtonColor)
+	m.SetBorderDirections(types.NewSet(BbdLeft, BbdTop, BbdRight, BbdBottom))
 
 	// 销毁事件
 	m.SetOnDestroy(func() {
@@ -423,7 +418,6 @@ func (m *TButton) SetDefaultColor(start, end colors.TColor) {
 	// 更新按钮默认颜色配置
 	m.defaultColor.start = start
 	m.defaultColor.end = end
-	// 强制重绘按钮界面
 	m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
 
@@ -469,6 +463,16 @@ func (m *TButton) DisabledColor() (start, end colors.TColor) {
 	return
 }
 
+func (m *TButton) SetColor(color colors.TColor) {
+	m.SetColorGradient(color, color)
+}
+
+func (m *TButton) SetColorGradient(start, end colors.TColor) {
+	m.SetDefaultColor(start, end)
+	m.SetEnterColor(DarkenColor(start, 0.1), DarkenColor(end, 0.1))
+	m.SetDownColor(DarkenColor(start, 0.2), DarkenColor(end, 0.2))
+}
+
 // SetBorderColor 设置按钮所有状态下的边框颜色
 //
 // 参数:
@@ -478,24 +482,23 @@ func (m *TButton) DisabledColor() (start, end colors.TColor) {
 // 该函数会同时设置按钮在默认、悬停、按下和禁用状态下的边框颜色
 // 为统一的颜色值，实现按钮边框颜色的整体变更
 func (m *TButton) SetBorderColor(color colors.TColor) {
-	m.defaultColor.border = color
-	m.enterColor.border = color
-	m.downColor.border = color
-	m.disabledColor.border = color
+	m.defaultColor.Border.Color = color
+	m.enterColor.Border.Color = DarkenColor(color, 0.1)
+	m.downColor.Border.Color = DarkenColor(color, 0.2)
 }
 
-// SetBorders 设置按钮的所有状态边框样式
+// SetBorderDirections 设置按钮的所有状态边框样式
 // 参数:
 //
 //	borders: TButtonBorders类型，指定按钮的边框样式
 //
 // 该函数会同时设置按钮的默认、悬停、按下和禁用四种状态的边框样式
 // 为相同的值，实现统一的边框外观效果
-func (m *TButton) SetBorders(borders TButtonBorders) {
-	m.defaultColor.borders = borders
-	m.enterColor.borders = borders
-	m.downColor.borders = borders
-	m.disabledColor.borders = borders
+func (m *TButton) SetBorderDirections(directions TButtonBorderDirections) {
+	m.defaultColor.Border.Direction = directions
+	m.enterColor.Border.Direction = directions
+	m.downColor.Border.Direction = directions
+	m.disabledColor.Border.Direction = directions
 }
 
 func (m *TButton) SetAlpha(alpha byte) {
@@ -508,18 +511,6 @@ func (m *TButton) SetRadius(radius int32) {
 
 func (m *TButton) Free() {
 	m.ICustomGraphicControl.Free()
-}
-
-func round(v float64) float64 {
-	return math.Round(v)
-}
-
-func sqr(x int32) int32 {
-	return x * x
-}
-
-func sqrt(v float64) float32 {
-	return float32(math.Sqrt(v))
 }
 
 // 文本截断函数（添加在文本末尾）
