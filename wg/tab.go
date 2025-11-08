@@ -1,7 +1,6 @@
 package wg
 
 import (
-	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
@@ -22,24 +21,29 @@ var (
 )
 
 type TTab struct {
-	lcl.ICustomPanel              //
-	pages             []*TPage    // 页列表
-	totalTabWidth     int32       // 页签总宽度
-	deleting          bool        // 正在删除中 page
-	scrollLeftBtn     *TButton    // tab 滚动导航按钮 左滚动
-	scrollRightBtn    *TButton    // tab 滚动导航按钮 右滚动
-	scrollOffset      int32       // tab 滚动导航按钮 偏移坐标
-	scrollTimer       *time.Timer // tab 滚动连续
-	triggerScrollStop bool        // 触发滚动是否停止
+	lcl.ICustomPanel                   //
+	pages             []*TPage         // 页列表
+	totalTabWidth     int32            // 页签总宽度
+	deleting          bool             // 正在删除中 page
+	scrollLeftBtn     *TButton         // tab 滚动导航按钮 左滚动
+	scrollRightBtn    *TButton         // tab 滚动导航按钮 右滚动
+	scrollOffset      int32            // tab 滚动导航按钮 偏移坐标
+	scrollTimer       *time.Timer      // tab 滚动连续
+	triggerScrollStop bool             // 触发滚动是否停止
+	onChange          lcl.TNotifyEvent //
 }
 
 type TPage struct {
 	lcl.ICustomPanel
-	tabSheet lcl.ICustomPage
-	active   bool     // 是否激活
-	show     bool     // 是否显示
-	tab      *TTab    // 所属的tab
-	button   *TButton // 按钮
+	tabSheet     lcl.ICustomPage
+	active       bool     // 是否激活
+	show         bool     // 是否显示
+	tab          *TTab    // 所属的tab
+	button       *TButton // 按钮
+	onShow       lcl.TNotifyEvent
+	onHide       lcl.TNotifyEvent
+	activeColor  types.TColor //
+	defaultColor types.TColor //
 }
 
 func NewTab(owner lcl.IComponent) *TTab {
@@ -95,6 +99,8 @@ func (m *TTab) initScrollBtn() {
 func (m *TTab) NewPage() *TPage {
 	page := new(TPage)
 	page.tab = m
+	page.activeColor = activeColor
+	page.defaultColor = defaultColor
 	button := NewButton(m)
 	button.SetAutoSize(true)
 	button.SetShowHint(true)
@@ -131,17 +137,28 @@ func (m *TTab) NewPage() *TPage {
 
 	m.pages = append(m.pages, page) // 添加到页列表
 	page.initEvent()                // 初始化事件
-	m.HideAllActivated()            // 隐藏所有激活的
-	page.Active(true)               // 激活当前页
-	m.RecalculatePosition()         // 重新计算位置
+	//m.HideAllActivated()            // 隐藏所有激活的
+	page.Active(false)
+	//m.RecalculatePosition()         // 重新计算位置
 
 	tabSheet.SetOnShow(func(sender lcl.IObject) {
-		fmt.Println("sheet.SetOnShow", page.button.Text())
+		if m.onChange != nil {
+			m.onChange(m)
+		}
+		if page.onShow != nil {
+			page.onShow(sender)
+		}
 	})
 	tabSheet.SetOnHide(func(sender lcl.IObject) {
-		fmt.Println("sheet.SetOnHide", page.button.Text())
+		if page.onHide != nil {
+			page.onHide(sender)
+		}
 	})
 	return page
+}
+
+func (m *TTab) SetOnChange(fn lcl.TNotifyEvent) {
+	m.onChange = fn
 }
 
 func (m *TTab) EnableScrollButton(value bool) {
@@ -284,18 +301,25 @@ func (m *TPage) Remove() {
 	m.tab = nil
 }
 
+func (m *TPage) SetActiveColor(color types.TColor) {
+	m.activeColor = color
+}
+func (m *TPage) SetDefaultColor(color types.TColor) {
+	m.defaultColor = color
+}
+
 // 激活自己, 会取消其它激活的
 func (m *TPage) Active(active bool) {
 	m.active = active
 	if active {
 		m.ICustomPanel.Show()
 		m.tabSheet.Show()
-		m.button.SetDefaultColor(activeColor, activeColor)
+		m.button.SetDefaultColor(m.activeColor, m.activeColor)
 		m.button.Invalidate()
 	} else {
 		m.ICustomPanel.Hide()
 		m.tabSheet.Hide()
-		m.button.SetDefaultColor(defaultColor, defaultColor)
+		m.button.SetDefaultColor(m.defaultColor, m.defaultColor)
 		m.button.Invalidate()
 	}
 }
@@ -312,6 +336,14 @@ func (m *TPage) Show() {
 	m.button.Show()
 	m.Active(true)
 	m.tab.RecalculatePosition()
+}
+
+func (m *TPage) SetOnShow(fn lcl.TNotifyEvent) {
+	m.onShow = fn
+}
+
+func (m *TPage) SetOnHide(fn lcl.TNotifyEvent) {
+	m.onHide = fn
 }
 
 func (m *TPage) initEvent() {

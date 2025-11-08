@@ -519,6 +519,9 @@ func (m *TButton) SetColor(color colors.TColor) {
 	m.SetColorGradient(color, color)
 }
 
+// SetColorGradient 设置按钮的颜色渐变效果
+// start: 渐变起始颜色
+// end: 渐变结束颜色
 func (m *TButton) SetColorGradient(start, end colors.TColor) {
 	m.SetDefaultColor(start, end)
 	m.SetEnterColor(DarkenColor(start, 0.1), DarkenColor(end, 0.1))
