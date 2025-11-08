@@ -346,14 +346,6 @@ func (m *TButton) Text() string {
 	return m.text
 }
 
-func (m *TButton) SetIcon(filePath string) {
-	if !m.IsValid() {
-		return
-	}
-	m.icon.LoadFromFile(filePath)
-	return
-}
-
 func (m *TButton) SetAutoSize(v bool) {
 	m.autoSize = v
 }
@@ -363,7 +355,35 @@ func (m *TButton) SetIconFavorite(filePath string) {
 		return
 	}
 	m.iconFavorite.LoadFromFile(filePath)
-	return
+}
+
+func (m *TButton) SetIconFavoriteFormBytes(pngData []byte) {
+	if !m.IsValid() {
+		return
+	}
+	mem := lcl.NewMemoryStream()
+	defer mem.Free()
+	lcl.StreamHelper.WriteBuffer(mem, pngData)
+	mem.SetPosition(0)
+	m.iconFavorite.LoadFromStream(mem)
+}
+
+func (m *TButton) SetIcon(filePath string) {
+	if !m.IsValid() {
+		return
+	}
+	m.icon.LoadFromFile(filePath)
+}
+
+func (m *TButton) SetIconFormBytes(pngData []byte) {
+	if !m.IsValid() {
+		return
+	}
+	mem := lcl.NewMemoryStream()
+	defer mem.Free()
+	lcl.StreamHelper.WriteBuffer(mem, pngData)
+	mem.SetPosition(0)
+	m.icon.LoadFromStream(mem)
 }
 
 func (m *TButton) SetIconClose(filePath string) {
@@ -375,15 +395,23 @@ func (m *TButton) SetIconClose(filePath string) {
 	enterFilePath := filepath.Join(path, ns[0]+"_enter.png")
 	m.iconClose.LoadFromFile(filePath)
 	m.iconCloseHighlight.LoadFromFile(enterFilePath)
-	return
 }
 
-func (m *TButton) SetIconCloseFormBytes(pngData []byte) {
+func (m *TButton) SetIconCloseFormBytes(iconClosePngData, iconCloseHighlightPngData []byte) {
 	if !m.IsValid() {
 		return
 	}
-	//m.iconClose.LoadFromStream()
-	return
+	mem := lcl.NewMemoryStream()
+	defer mem.Free()
+	lcl.StreamHelper.WriteBuffer(mem, iconClosePngData)
+	mem.SetPosition(0)
+	m.iconClose.LoadFromStream(mem)
+
+	mem2 := lcl.NewMemoryStream()
+	defer mem2.Free()
+	lcl.StreamHelper.WriteBuffer(mem2, iconCloseHighlightPngData)
+	mem2.SetPosition(0)
+	m.iconCloseHighlight.LoadFromStream(mem2)
 }
 
 func (m *TButton) paint(sender lcl.IObject) {

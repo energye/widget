@@ -5,6 +5,7 @@ import (
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
+	"os"
 	"strconv"
 	"time"
 )
@@ -17,6 +18,7 @@ var (
 	scrollBtnWidth  = int32(20)
 	scrollBtnHeight = int32(25)
 	scrollBtnMargin = int32(4)
+	scrollStep      = int32(15)
 )
 
 type TTab struct {
@@ -56,7 +58,9 @@ func (m *TTab) initScrollBtn() {
 	m.scrollLeftBtn = NewButton(m)
 	m.scrollRightBtn = NewButton(m)
 
-	m.scrollLeftBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-left.png")
+	//m.scrollLeftBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-left.png")
+	leftIcon, _ := os.ReadFile("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-left.png")
+	m.scrollLeftBtn.SetIconFormBytes(leftIcon)
 	m.scrollLeftBtn.SetWidth(scrollBtnWidth)
 	m.scrollLeftBtn.SetHeight(scrollBtnHeight)
 	m.scrollLeftBtn.SetLeft(2)
@@ -106,7 +110,7 @@ func (m *TTab) NewPage() *TPage {
 	button.SetDefaultColor(defaultColor, defaultColor)
 	button.SetEnterColor(DarkenColor(defaultColor, 0.1), DarkenColor(defaultColor, 0.1))
 	button.SetDownColor(DarkenColor(defaultColor, 0.2), DarkenColor(defaultColor, 0.2))
-	button.SetBorderColor(DarkenColor(defaultColor, 0.5))
+	button.SetBorderColor(DarkenColor(defaultColor, 0.3))
 	button.SetParent(m)
 	page.button = button
 
@@ -163,7 +167,7 @@ func (m *TTab) triggerScrollLoop(afterTime time.Duration, scrollLeftOrRight int3
 		}
 	})
 	m.scrollTimer = time.AfterFunc(afterTime, func() {
-		m.triggerScrollLoop(time.Second/20, scrollLeftOrRight)
+		m.triggerScrollLoop(time.Second/30, scrollLeftOrRight)
 	})
 }
 
@@ -174,7 +178,7 @@ func (m *TTab) scrollLeft() {
 		scrollLeft = scrollBtnWidth + scrollBtnMargin
 	}
 	if m.scrollOffset+scrollLeft < scrollLeft {
-		m.scrollOffset += 20
+		m.scrollOffset += scrollStep
 		m.RecalculatePosition()
 	} else {
 		m.triggerScrollStop = true
@@ -186,7 +190,7 @@ func (m *TTab) scrollRight() {
 	width := m.Width()
 	widths := m.totalTabWidth + scrollBtnWidth + scrollBtnMargin
 	if widths > width {
-		m.scrollOffset += -20
+		m.scrollOffset += -scrollStep
 		m.RecalculatePosition()
 	} else {
 		m.triggerScrollStop = true
