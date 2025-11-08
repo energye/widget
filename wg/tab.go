@@ -22,7 +22,7 @@ var (
 type TTab struct {
 	lcl.ICustomPanel              //
 	pages             []*TPage    // 页列表
-	widths            int32       // 页签总宽度
+	totalTabWidth     int32       // 页签总宽度
 	deleting          bool        // 正在删除中 page
 	scrollLeftBtn     *TButton    // tab 滚动导航按钮 左滚动
 	scrollRightBtn    *TButton    // tab 滚动导航按钮 右滚动
@@ -167,6 +167,7 @@ func (m *TTab) triggerScrollLoop(afterTime time.Duration, scrollLeftOrRight int3
 	})
 }
 
+// 向左滚动
 func (m *TTab) scrollLeft() {
 	scrollLeft := int32(0)
 	if m.scrollLeftBtn.Visible() {
@@ -180,9 +181,10 @@ func (m *TTab) scrollLeft() {
 	}
 }
 
+// 向右滚动
 func (m *TTab) scrollRight() {
 	width := m.Width()
-	widths := m.widths + scrollBtnWidth + scrollBtnMargin
+	widths := m.totalTabWidth + scrollBtnWidth + scrollBtnMargin
 	if widths > width {
 		m.scrollOffset += -20
 		m.RecalculatePosition()
@@ -207,7 +209,8 @@ func (m *TTab) RecalculatePosition() {
 			widths += br.Width()
 		}
 	}
-	m.widths = widths
+	m.totalTabWidth = widths
+	// 滚动导航按钮 位置调整
 	m.scrollBtnPosition()
 }
 

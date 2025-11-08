@@ -378,6 +378,14 @@ func (m *TButton) SetIconClose(filePath string) {
 	return
 }
 
+func (m *TButton) SetIconCloseFormBytes(pngData []byte) {
+	if !m.IsValid() {
+		return
+	}
+	//m.iconClose.LoadFromStream()
+	return
+}
+
 func (m *TButton) paint(sender lcl.IObject) {
 	if !m.IsValid() {
 		return
