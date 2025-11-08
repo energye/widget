@@ -31,8 +31,8 @@ const (
 )
 
 var (
-	defaultButtonColor        = colors.RGBToColor(66, 133, 244)
-	defaultButtonColorDisable = colors.RGBToColor(200, 200, 200)
+	defaultButtonColor        = colors.RGBToColor(66, 133, 244)  // 淡蓝色
+	defaultButtonColorDisable = colors.RGBToColor(200, 200, 200) // 浅灰色
 )
 
 // TButton 多功能自绘按钮
