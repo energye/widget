@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
@@ -28,6 +29,8 @@ var MainForm TMainForm
 var (
 	wd, _       = os.Getwd()
 	examplePath = filepath.Join(wd, "test", "tab")
+	//go:embed resources
+	resource embed.FS
 )
 
 func main() {
@@ -62,6 +65,10 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	//tab.EnableScrollButton(false)
 	tab.RecalculatePosition()
 
+	iconData, _ := resource.ReadFile("resources/icon.png")
+	closeData, _ := resource.ReadFile("resources/close.png")
+	closeEnterData, _ := resource.ReadFile("resources/close_enter.png")
+
 	addPage := func(count int) {
 		page := tab.NewPage()
 		page.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
@@ -72,8 +79,11 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		testPanel.SetParent(page)
 		btn := page.Button()
 		btn.SetText(RandMixString())
-		btn.SetIconFavorite("C:\\app\\workspace\\widget\\test\\tab\\resources\\icon.png")
-		btn.SetIconClose("C:\\app\\workspace\\widget\\test\\tab\\resources\\close.png")
+		//btn.SetIconFavorite("C:\\app\\workspace\\widget\\test\\tab\\resources\\icon.png")
+		//btn.SetIconClose("C:\\app\\workspace\\widget\\test\\tab\\resources\\close.png")
+		btn.SetIconFavoriteFormBytes(iconData)
+		btn.SetIconCloseFormBytes(closeData)
+		btn.SetIconCloseHighlightFormBytes(closeEnterData)
 		testButton := wg.NewButton(page)
 		testButton.SetLeft(20)
 		testButton.SetTop(20)
