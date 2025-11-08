@@ -141,6 +141,7 @@ func (m *TTab) NewPage() *TPage {
 	page.Active(false)
 	//m.RecalculatePosition()         // 重新计算位置
 
+	// 事件处理
 	tabSheet.SetOnShow(func(sender lcl.IObject) {
 		if m.onChange != nil {
 			m.onChange(m)
