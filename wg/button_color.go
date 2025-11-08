@@ -69,7 +69,7 @@ func (m *TButtonColor) forcePaint(roundedCorners TRoundedCorners, rect types.TRe
 // rect: 绘制区域矩形
 // alpha: 透明度值
 // radius: 圆角半径
-func (m *TButtonColor) paint(roundedCorners TRoundedCorners, rect types.TRect, alpha byte, radius int32) {
+func (m *TButtonColor) tryPaint(roundedCorners TRoundedCorners, rect types.TRect, alpha byte, radius int32) {
 	isPaint := false
 	if m.img.Width() != rect.Width() || m.img.Height() != rect.Height() {
 		m.img.SetSize(rect.Width(), rect.Height())

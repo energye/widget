@@ -42,6 +42,7 @@ type TPage struct {
 	button       *TButton // 按钮
 	onShow       lcl.TNotifyEvent
 	onHide       lcl.TNotifyEvent
+	onClose      lcl.TNotifyEvent
 	activeColor  types.TColor //
 	defaultColor types.TColor //
 }
@@ -285,6 +286,10 @@ func (m *TTab) RemovePage(removePage *TPage) {
 	m.deleting = false
 }
 
+func (m *TTab) Pages() []*TPage {
+	return m.pages
+}
+
 // 删除掉自己
 func (m *TPage) Remove() {
 	m.button.SetOnClick(nil)
@@ -347,6 +352,10 @@ func (m *TPage) SetOnHide(fn lcl.TNotifyEvent) {
 	m.onHide = fn
 }
 
+func (m *TPage) SetOnClose(fn lcl.TNotifyEvent) {
+	m.onClose = fn
+}
+
 func (m *TPage) initEvent() {
 	m.button.SetOnClick(func(sender lcl.IObject) {
 		m.tab.HideAllActivated()
@@ -359,6 +368,9 @@ func (m *TPage) initEvent() {
 		m.tab.deleting = true
 		lcl.RunOnMainThreadAsync(func(id uint32) {
 			m.Remove()
+			if m.onClose != nil {
+				m.onClose(m)
+			}
 		})
 	})
 	m.SetOnResize(func(sender lcl.IObject) {

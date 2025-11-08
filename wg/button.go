@@ -6,6 +6,7 @@ import (
 	"github.com/energye/lcl/types/colors"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type RoundedCorner = int32
@@ -67,6 +68,7 @@ type TButton struct {
 	enterColor    *TButtonColor
 	downColor     *TButtonColor
 	disabledColor *TButtonColor
+	forcePaint    *time.Timer
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -246,7 +248,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	if color == nil {
 		return
 	}
-	color.paint(m.RoundedCorner, rect, m.alpha, m.radius)
+	color.tryPaint(m.RoundedCorner, rect, m.alpha, m.radius)
 
 	// 绘制到目标画布
 	canvas.DrawWithIntX2Graphic(rect.Left, rect.Top, color.bitMap)
@@ -441,6 +443,25 @@ func (m *TButton) paint(sender lcl.IObject) {
 }
 func (m *TButton) SetOnCloseClick(fn lcl.TNotifyEvent) {
 	m.onCloseClick = fn
+}
+
+// 强制重新绘制刷新缓存, 在某些情况可能是比较耗时的操作
+// fn: 缓存刷新完成的回调函数, 非线程安全
+func (m *TButton) ForcePaint(fn func()) {
+	if m.forcePaint != nil {
+		m.forcePaint.Stop()
+		m.forcePaint = nil
+	}
+	m.forcePaint = time.AfterFunc(time.Second/60, func() {
+		m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+		m.enterColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+		m.downColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+		m.disabledColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+		m.forcePaint = nil
+		if fn != nil {
+			fn()
+		}
+	})
 }
 
 func (m *TButton) SetOnPaint(fn lcl.TNotifyEvent) {

@@ -69,6 +69,21 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	closeData, _ := resource.ReadFile("resources/close.png")
 	closeEnterData, _ := resource.ReadFile("resources/close_enter.png")
 
+	borderSet := func() {
+		pageSize := len(tab.Pages())
+		for i, page := range tab.Pages() {
+			if i < pageSize-1 {
+				page.Button().SetBorderDirections(types.NewSet(wg.BbdLeft, wg.BbdTop, wg.BbdBottom))
+			} else {
+				page.Button().SetBorderDirections(types.NewSet(wg.BbdLeft, wg.BbdTop, wg.BbdBottom, wg.BbdRight))
+				page.Button().ForcePaint(func() {
+					page.Button().Invalidate()
+				})
+			}
+		}
+
+	}
+
 	addPage := func(count int) {
 		page := tab.NewPage()
 		page.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
@@ -96,6 +111,11 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		tab.HideAllActivated()
 		page.Active(true)
 		tab.RecalculatePosition()
+
+		page.SetOnClose(func(sender lcl.IObject) {
+			borderSet()
+		})
+		borderSet()
 	}
 
 	count := 0

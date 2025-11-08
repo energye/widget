@@ -175,7 +175,6 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			//setDisable(cus5)
 		})
 		disableBtn.SetParent(box)
-		return
 		{
 			cus := wg.NewButton(m)
 			cus.SetShowHint(true)
