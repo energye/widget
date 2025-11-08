@@ -558,9 +558,9 @@ func (m *TButton) SetColorGradient(start, end colors.TColor) {
 // 该函数会同时设置按钮在默认、悬停、按下和禁用状态下的边框颜色
 // 为统一的颜色值，实现按钮边框颜色的整体变更
 func (m *TButton) SetBorderColor(color colors.TColor) {
-	m.defaultColor.Border.Color = color
-	m.enterColor.Border.Color = DarkenColor(color, 0.1)
-	m.downColor.Border.Color = DarkenColor(color, 0.2)
+	m.defaultColor.SetBorderColor(0, color)
+	m.enterColor.SetBorderColor(0, DarkenColor(color, 0.1))
+	m.downColor.SetBorderColor(0, DarkenColor(color, 0.2))
 }
 
 // SetBorderDirections 设置按钮的所有状态边框样式

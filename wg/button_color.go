@@ -11,7 +11,8 @@ import (
 type TButtonBorderDirection = int32
 
 const (
-	BbdLeft TButtonBorderDirection = iota
+	BbdNone TButtonBorderDirection = iota
+	BbdLeft
 	BbdTop
 	BbdRight
 	BbdBottom
@@ -30,14 +31,19 @@ type TButtonColor struct {
 	type_  int32             // 按钮类型, 自定义, 区分类型
 }
 
+// 按钮边框
 type TButtonBorder struct {
-	Color       colors.TColor           // 按钮边框颜色, 启用边框方向才有作用
+	color       colors.TColor           // 按钮边框颜色, 启用边框方向才有作用
+	colorLeft   colors.TColor           // 按钮边框颜色, Left
+	colorTop    colors.TColor           // 按钮边框颜色, Top
+	colorRight  colors.TColor           // 按钮边框颜色, Right
+	colorBottom colors.TColor           // 按钮边框颜色, Bottom
 	Direction   TButtonBorderDirections // 按钮显示边框方向
-	Width       int32                   // 边框宽度
-	LeftWidth   int32                   // 左宽度
-	TopWidth    int32                   // 上宽度
-	RightWidth  int32                   // 右宽度
-	BottomWidth int32                   // 下宽度
+	width       int32                   // 边框宽度
+	leftWidth   int32                   // 左宽度
+	topWidth    int32                   // 上宽度
+	rightWidth  int32                   // 右宽度
+	bottomWidth int32                   // 下宽度
 }
 
 func NewButtonColor() *TButtonColor {
@@ -47,6 +53,77 @@ func NewButtonColor() *TButtonColor {
 	}
 	m.bitMap.SetPixelFormat(types.Pf32bit)
 	return m
+}
+
+// SetBorderWidth 设置按钮指定方向的边框宽度
+// direction: 边框方向，指定要设置哪一边的边框宽度
+// width: 边框宽度值，单位为像素
+func (m *TButtonColor) SetBorderWidth(direction TButtonBorderDirection, width int32) {
+	switch direction {
+	case BbdLeft:
+		m.Border.leftWidth = width
+	case BbdTop:
+		m.Border.topWidth = width
+	case BbdRight:
+		m.Border.rightWidth = width
+	case BbdBottom:
+		m.Border.bottomWidth = width
+	default:
+		m.Border.width = width
+	}
+}
+
+// BorderWidth 根据指定的边框方向返回对应的边框宽度
+//
+//	direction: 边框方向枚举值，指定要获取哪个方向的边框宽度
+//	int32: 指定方向的边框宽度值，如果方向无效则返回默认宽度
+func (m *TButtonColor) BorderWidth(direction TButtonBorderDirection) int32 {
+	switch direction {
+	case BbdLeft:
+		return m.Border.leftWidth
+	case BbdTop:
+		return m.Border.topWidth
+	case BbdRight:
+		return m.Border.rightWidth
+	case BbdBottom:
+		return m.Border.bottomWidth
+	}
+	return m.Border.width
+}
+
+// SetBorderColor 设置按钮边框颜色
+// borderColor: 指定要设置的边框方向
+// color: 要设置的边框颜色值
+func (m *TButtonColor) SetBorderColor(direction TButtonBorderDirection, color colors.TColor) {
+	switch direction {
+	case BbdLeft:
+		m.Border.colorLeft = color
+	case BbdTop:
+		m.Border.colorTop = color
+	case BbdRight:
+		m.Border.colorRight = color
+	case BbdBottom:
+		m.Border.colorBottom = color
+	default:
+		m.Border.color = color
+	}
+}
+
+// BorderColor 根据指定的边框方向返回对应的边框颜色
+// direction: 边框方向枚举值，指定要获取哪个方向的边框颜色
+// colors.TColor: 指定方向的边框颜色值，如果方向无效则返回0
+func (m *TButtonColor) BorderColor(direction TButtonBorderDirection) colors.TColor {
+	switch direction {
+	case BbdLeft:
+		return m.Border.colorLeft
+	case BbdTop:
+		return m.Border.colorTop
+	case BbdRight:
+		return m.Border.colorRight
+	case BbdBottom:
+		return m.Border.colorBottom
+	}
+	return m.Border.color
 }
 
 // forcePaint 强制绘制按钮颜色
@@ -117,9 +194,10 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 		b := round(float64(startB)*(1-ratio) + float64(endB)*ratio)
 		color := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
 		borderColor := color
-		if m.Border.Color != 0 {
-			borderColor = ColorToFPColor(m.Border.Color, ratio)
+		if m.Border.color != 0 {
+			borderColor = ColorToFPColor(m.Border.color, ratio)
 		} else {
+			// 未配置时使用默认颜色, 加深
 			DarkenFPColor(&borderColor, 0.5)
 		}
 		// 注意：Alpha会在内循环中为每个像素单独设置
