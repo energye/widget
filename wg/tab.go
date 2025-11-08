@@ -5,9 +5,9 @@ import (
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
-	"os"
 	"strconv"
 	"time"
+	"widget/assets"
 )
 
 var (
@@ -58,9 +58,7 @@ func (m *TTab) initScrollBtn() {
 	m.scrollLeftBtn = NewButton(m)
 	m.scrollRightBtn = NewButton(m)
 
-	//m.scrollLeftBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-left.png")
-	leftIcon, _ := os.ReadFile("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-left.png")
-	m.scrollLeftBtn.SetIconFormBytes(leftIcon)
+	m.scrollLeftBtn.SetIconFormBytes(assets.Tab("scroll-left.png"))
 	m.scrollLeftBtn.SetWidth(scrollBtnWidth)
 	m.scrollLeftBtn.SetHeight(scrollBtnHeight)
 	m.scrollLeftBtn.SetLeft(2)
@@ -70,7 +68,7 @@ func (m *TTab) initScrollBtn() {
 	m.scrollLeftBtn.SetColor(LightenColor(colors.ClGray, 0.2))
 	m.scrollLeftBtn.SetParent(m)
 
-	m.scrollRightBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-right.png")
+	m.scrollRightBtn.SetIconFormBytes(assets.Tab("scroll-right.png"))
 	m.scrollRightBtn.SetWidth(scrollBtnWidth)
 	m.scrollRightBtn.SetHeight(scrollBtnHeight)
 	//m.scrollRightBtn.SetTop(2)
