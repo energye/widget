@@ -72,7 +72,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		testPanel.SetParent(page)
 		btn := page.Button()
 		btn.SetText(RandMixString())
-		btn.SetIconFavorite("C:\\app\\workspace\\widget\\test\\tab\\resources\\icon.png")
+		//btn.SetIconFavorite("C:\\app\\workspace\\widget\\test\\tab\\resources\\icon.png")
 		btn.SetIconClose("C:\\app\\workspace\\widget\\test\\tab\\resources\\close.png")
 		testButton := wg.NewButton(page)
 		testButton.SetLeft(20)

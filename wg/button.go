@@ -255,15 +255,18 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	brush := canvas.BrushToBrush()
 	brush.SetStyle(types.BsClear)
 
+	textMargin := int32(0) // 文本与图标的间距
 	// 计算左右图标占用的空间
 	leftArea := int32(0)
 	if m.iconFavorite.Width() > 0 {
 		leftArea = iconMargin + m.iconFavorite.Width() + iconMargin // 左边距10 + 图标宽度 + 图标与文本间距10
+		textMargin += iconMargin
 	}
 
 	rightArea := int32(0)
 	if m.iconClose.Width() > 0 {
 		rightArea = iconMargin + m.iconClose.Width() + iconMargin // 右边距10 + 图标宽度 + 图标与文本间距10
+		textMargin += -iconMargin
 	}
 
 	// 计算文本可用宽度
@@ -278,7 +281,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 
 	// 计算文字位置
 	textSize := canvas.TextExtentWithUnicodestring(text)
-	textX := rect.Left + m.TextOffSetX + (rect.Width()-textSize.Cx)/2
+	textX := rect.Left + m.TextOffSetX + (rect.Width()-textSize.Cx)/2 + textMargin
 	textY := rect.Top + m.TextOffSetY + (rect.Height()-textSize.Cy)/2
 
 	// 绘制文字阴影（增强可读性）
@@ -289,10 +292,11 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	//canvas.FontToFont().SetColor(colors.ClWhite)
 	canvas.TextOutWithIntX2Unicodestring(textX, textY, text)
 
-	// 绘制图标 favorite 在左
+	// 左: 绘制图标 favorite
 	favY := rect.Height()/2 - m.iconFavorite.Height()/2
 	canvas.DrawWithIntX2Graphic(iconMargin, favY, m.iconFavorite.Graphic())
-	// 绘制图标 close 在右
+
+	// 右: 绘制图标 close
 	iconClose := m.iconClose
 	if m.isEnterClose {
 		iconClose = m.iconCloseHighlight
@@ -301,7 +305,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	closeY := rect.Height()/2 - iconClose.Height()/2
 	canvas.DrawWithIntX2Graphic(closeX, closeY, iconClose.Graphic())
 
-	// 绘制图标 icon, 在中间位置
+	// 中间: 绘制图标 icon
 	iconW, iconH := m.icon.Width(), m.icon.Height()
 	iconX := rect.Left + (rect.Width()-iconW)/2
 	iconY := rect.Top + (rect.Height()-iconH)/2
@@ -394,24 +398,36 @@ func (m *TButton) SetIconClose(filePath string) {
 	ns := strings.Split(name, ".")
 	enterFilePath := filepath.Join(path, ns[0]+"_enter.png")
 	m.iconClose.LoadFromFile(filePath)
-	m.iconCloseHighlight.LoadFromFile(enterFilePath)
+	m.SetIconCloseHighlight(enterFilePath)
 }
 
-func (m *TButton) SetIconCloseFormBytes(iconClosePngData, iconCloseHighlightPngData []byte) {
+func (m *TButton) SetIconCloseHighlight(filePath string) {
+	if !m.IsValid() {
+		return
+	}
+	m.iconCloseHighlight.LoadFromFile(filePath)
+}
+
+func (m *TButton) SetIconCloseFormBytes(pngData []byte) {
 	if !m.IsValid() {
 		return
 	}
 	mem := lcl.NewMemoryStream()
 	defer mem.Free()
-	lcl.StreamHelper.WriteBuffer(mem, iconClosePngData)
+	lcl.StreamHelper.WriteBuffer(mem, pngData)
 	mem.SetPosition(0)
 	m.iconClose.LoadFromStream(mem)
+}
 
-	mem2 := lcl.NewMemoryStream()
-	defer mem2.Free()
-	lcl.StreamHelper.WriteBuffer(mem2, iconCloseHighlightPngData)
-	mem2.SetPosition(0)
-	m.iconCloseHighlight.LoadFromStream(mem2)
+func (m *TButton) SetIconCloseHighlightFormBytes(pngData []byte) {
+	if !m.IsValid() {
+		return
+	}
+	mem := lcl.NewMemoryStream()
+	defer mem.Free()
+	lcl.StreamHelper.WriteBuffer(mem, pngData)
+	mem.SetPosition(0)
+	m.iconCloseHighlight.LoadFromStream(mem)
 }
 
 func (m *TButton) paint(sender lcl.IObject) {
