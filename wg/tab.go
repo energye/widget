@@ -1,37 +1,42 @@
 package wg
 
 import (
-	"fmt"
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
 	"strconv"
+	"time"
 )
 
 var (
-	activeColor    = colors.RGBToColor(60, 70, 80)
-	defaultColor   = colors.RGBToColor(86, 88, 100)
-	defaultPrefix  = "Tab"
-	defaultHeight  = int32(25)
-	scrollBtnWidth = int32(16)
+	activeColor     = colors.RGBToColor(60, 70, 80)
+	defaultColor    = colors.RGBToColor(86, 88, 100)
+	defaultPrefix   = "Tab"
+	defaultHeight   = int32(25)
+	scrollBtnWidth  = int32(20)
+	scrollBtnHeight = int32(25)
+	scrollBtnMargin = int32(4)
 )
 
 type TTab struct {
-	lcl.ICustomPanel          //
-	pages            []*TPage // 页列表
-	widths           int32    // 页签总宽度
-	deleting         bool     // 正在删除中的 page
-	scrollLeftBtn    *TButton // tab 滚动导航按钮 左滚动
-	scrollRightBtn   *TButton // tab 滚动导航按钮 右滚动
-	scrollOffset     int32    // tab 滚动导航按钮 偏移坐标
+	lcl.ICustomPanel              //
+	pages             []*TPage    // 页列表
+	widths            int32       // 页签总宽度
+	deleting          bool        // 正在删除中 page
+	scrollLeftBtn     *TButton    // tab 滚动导航按钮 左滚动
+	scrollRightBtn    *TButton    // tab 滚动导航按钮 右滚动
+	scrollOffset      int32       // tab 滚动导航按钮 偏移坐标
+	scrollTimer       *time.Timer // tab 滚动连续
+	triggerScrollStop bool        // 触发滚动是否停止
 }
 
 type TPage struct {
 	lcl.ICustomPanel
-	active bool     // 是否激活
-	show   bool     // 是否显示
-	tab    *TTab    // 所属的tab
-	button *TButton // 按钮
+	tabSheet lcl.ICustomPage
+	active   bool     // 是否激活
+	show     bool     // 是否显示
+	tab      *TTab    // 所属的tab
+	button   *TButton // 按钮
 }
 
 func NewTab(owner lcl.IComponent) *TTab {
@@ -52,36 +57,36 @@ func (m *TTab) initScrollBtn() {
 
 	m.scrollLeftBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-left.png")
 	m.scrollLeftBtn.SetWidth(scrollBtnWidth)
-	m.scrollLeftBtn.SetHeight(defaultHeight)
-	m.scrollLeftBtn.SetLeft(0)
-	m.scrollLeftBtn.SetRadius(0)
-	m.scrollLeftBtn.SetAlpha(255)
-	//m.scrollLeftBtn.SetStartColor(colors.ClGray)
-	//m.scrollLeftBtn.SetEndColor(colors.ClGray)
+	m.scrollLeftBtn.SetHeight(scrollBtnHeight)
+	m.scrollLeftBtn.SetLeft(2)
+	//m.scrollLeftBtn.SetTop(2)
+	m.scrollLeftBtn.SetRadius(1)
+	m.scrollLeftBtn.SetBorderDirections(types.NewSet())
+	m.scrollLeftBtn.SetColor(LightenColor(colors.ClGray, 0.2))
 	m.scrollLeftBtn.SetParent(m)
 
 	m.scrollRightBtn.SetIcon("C:\\app\\workspace\\widget\\test\\tab\\resources\\scroll-right.png")
 	m.scrollRightBtn.SetWidth(scrollBtnWidth)
-	m.scrollRightBtn.SetHeight(defaultHeight)
-	m.scrollRightBtn.SetRadius(0)
-	m.scrollRightBtn.SetAlpha(255)
-	//m.scrollRightBtn.SetStartColor(colors.ClGray)
-	//m.scrollRightBtn.SetEndColor(colors.ClGray)
-	m.scrollRightBtn.SetLeft(scrollBtnWidth)
+	m.scrollRightBtn.SetHeight(scrollBtnHeight)
+	//m.scrollRightBtn.SetTop(2)
+	m.scrollRightBtn.SetRadius(1)
+	m.scrollRightBtn.SetBorderDirections(types.NewSet())
+	m.scrollRightBtn.SetColor(LightenColor(colors.ClGray, 0.2))
 	m.scrollRightBtn.SetParent(m)
 
-	m.scrollLeftBtn.SetOnClick(func(sender lcl.IObject) {
-		width := m.Width()
-		fmt.Println("width:", width, m.widths)
+	scrollBtnMouseUp := func(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+		m.triggerScrollStop = true
+	}
+	m.scrollLeftBtn.SetOnMouseDown(func(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+		m.triggerScrollStop = false
+		m.triggerScrollLoop(time.Second/2, 1)
 	})
-
-	m.scrollRightBtn.SetOnClick(func(sender lcl.IObject) {
-		width := m.Width()
-		fmt.Println("width:", width, m.widths)
-		if m.widths > width {
-
-		}
+	m.scrollLeftBtn.SetOnMouseUp(scrollBtnMouseUp)
+	m.scrollRightBtn.SetOnMouseDown(func(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+		m.triggerScrollStop = false
+		m.triggerScrollLoop(time.Second/2, 2)
 	})
+	m.scrollRightBtn.SetOnMouseUp(scrollBtnMouseUp)
 }
 
 func (m *TTab) NewPage() *TPage {
@@ -104,11 +109,11 @@ func (m *TTab) NewPage() *TPage {
 	button.SetParent(m)
 	page.button = button
 
-	sheet := lcl.NewPanel(m)
+	tabRect := m.ClientRect()
+	sheet := lcl.NewCustomPanel(m)
 	sheet.SetBevelInner(types.BvNone)
 	sheet.SetBevelOuter(types.BvNone)
 	sheet.SetBorderStyleToBorderStyle(types.BsNone)
-	tabRect := m.ClientRect()
 	sheet.SetTop(button.Height())
 	sheet.SetHeight(tabRect.Height() - button.Height())
 	sheet.SetWidth(tabRect.Width())
@@ -117,19 +122,88 @@ func (m *TTab) NewPage() *TPage {
 	sheet.SetParent(m)
 	page.ICustomPanel = sheet
 
-	m.pages = append(m.pages, page)
-	page.initEvent()
-	m.HiddenAllActivated()
-	page.Active(true)
-	m.RecalculatePosition()
+	tabSheet := lcl.NewCustomPage(m)
+	tabSheet.SetParent(sheet)
+	page.tabSheet = tabSheet
+
+	m.pages = append(m.pages, page) // 添加到页列表
+	page.initEvent()                // 初始化事件
+	m.HiddenAllActivated()          // 隐藏所有激活的
+	page.Active(true)               // 激活当前页
+	m.RecalculatePosition()         // 重新计算位置
+
+	tabSheet.SetOnShow(func(sender lcl.IObject) {
+		//fmt.Println("sheet.SetOnShow")
+	})
+	tabSheet.SetOnHide(func(sender lcl.IObject) {
+		//fmt.Println("sheet.SetOnHide")
+	})
 	return page
+}
+
+func (m *TTab) EnableScrollButton(value bool) {
+	m.scrollLeftBtn.SetVisible(value)
+	m.scrollRightBtn.SetVisible(value)
+}
+
+func (m *TTab) triggerScrollLoop(afterTime time.Duration, scrollLeftOrRight int32) {
+	if m.triggerScrollStop {
+		if m.scrollTimer != nil {
+			m.scrollTimer.Stop()
+			m.scrollTimer = nil
+		}
+		return
+	}
+	lcl.RunOnMainThreadAsync(func(id uint32) {
+		if scrollLeftOrRight == 1 {
+			m.scrollLeft()
+		} else {
+			m.scrollRight()
+		}
+	})
+	m.scrollTimer = time.AfterFunc(afterTime, func() {
+		m.triggerScrollLoop(time.Second/20, scrollLeftOrRight)
+	})
+}
+
+func (m *TTab) scrollLeft() {
+	scrollLeft := int32(0)
+	if m.scrollLeftBtn.Visible() {
+		scrollLeft = scrollBtnWidth + scrollBtnMargin
+	}
+	if m.scrollOffset+scrollLeft < scrollLeft {
+		m.scrollOffset += 20
+		m.RecalculatePosition()
+	} else {
+		m.triggerScrollStop = true
+	}
+}
+
+func (m *TTab) scrollRight() {
+	width := m.Width()
+	widths := m.widths + scrollBtnWidth + scrollBtnMargin
+	if widths > width {
+		m.scrollOffset += -20
+		m.RecalculatePosition()
+	} else {
+		m.triggerScrollStop = true
+	}
+}
+
+func (m *TTab) scrollRightEnd() {
+	m.triggerScrollStop = false
+	lcl.RunOnMainThreadAsync(func(id uint32) {
+		for !m.triggerScrollStop {
+			m.scrollRight()
+		}
+	})
 }
 
 // RecalculatePosition 重新计算位置, 在隐藏/移除时使用
 func (m *TTab) RecalculatePosition() {
 	var widths int32 = m.scrollOffset
 	if m.scrollLeftBtn.Visible() {
-		widths += scrollBtnWidth
+		widths += scrollBtnWidth + scrollBtnMargin
 	}
 	for _, page := range m.pages {
 		br := page.button.BoundsRect()
@@ -145,7 +219,9 @@ func (m *TTab) RecalculatePosition() {
 
 // 滚动导航按钮 位置调整
 func (m *TTab) scrollBtnPosition() {
-	m.scrollRightBtn.SetLeft(m.Width() - scrollBtnWidth)
+	m.scrollLeftBtn.SetLeft(2)
+	m.scrollLeftBtn.BringToFront()
+	m.scrollRightBtn.SetLeft(m.Width() - scrollBtnWidth - 2)
 	m.scrollRightBtn.BringToFront()
 }
 
@@ -195,11 +271,13 @@ func (m *TPage) Remove() {
 	// 先隐藏掉
 	m.button.Hide()
 	m.ICustomPanel.Hide()
+	m.tabSheet.Hide()
 	// 在page里删除自己
 	m.tab.RemovePage(m)
 	// 最后释放掉
 	m.button.Free()
 	m.ICustomPanel.Free()
+	m.tabSheet.Free()
 	m.tab = nil
 }
 
@@ -208,10 +286,12 @@ func (m *TPage) Active(active bool) {
 	m.active = active
 	if active {
 		m.ICustomPanel.Show()
+		m.tabSheet.Show()
 		m.button.SetDefaultColor(activeColor, activeColor)
 		m.button.Invalidate()
 	} else {
 		m.ICustomPanel.Hide()
+		m.tabSheet.Hide()
 		m.button.SetDefaultColor(defaultColor, defaultColor)
 		m.button.Invalidate()
 	}

@@ -59,11 +59,17 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	tab.SetParent(box)
 	tab.SetBounds(0, 0, box.Width(), box.Height())
 	tab.SetAlign(types.AlClient)
+	tab.EnableScrollButton(false)
 	tab.RecalculatePosition()
 
 	addPage := func(count int) {
 		page := tab.NewPage()
 		page.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
+		testPanel := lcl.NewPanel(page)
+		testPanel.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
+		testPanel.SetTop(int32(rand.Intn(400)))
+		testPanel.SetLeft(int32(rand.Intn(400)))
+		testPanel.SetParent(page)
 		btn := page.Button()
 		btn.SetText(RandMixString())
 		btn.SetIconFavorite("C:\\app\\workspace\\widget\\test\\tab\\resources\\icon.png")
