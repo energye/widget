@@ -83,6 +83,9 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		testButton.Font().SetColor(colors.ClWhite)
 		testButton.Font().SetStyle(types.NewSet(types.FsBold))
 		testButton.SetParent(page)
+		tab.HideAllActivated()
+		page.Active(true)
+		tab.RecalculatePosition()
 	}
 
 	count := 0
