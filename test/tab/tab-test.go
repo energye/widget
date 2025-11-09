@@ -124,10 +124,10 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	add.SetLeft(20)
 	add.SetTop(20)
 	add.SetRadius(8)
+	add.SetBorderDirections(0)
 	add.SetText("添加一个 Tab Page")
 	add.Font().SetColor(colors.ClWhite)
 	add.Font().SetStyle(types.NewSet(types.FsBold))
-	add.SetBorderDirections(0)
 	add.SetOnClick(func(sender lcl.IObject) {
 		addPage(count)
 		count++

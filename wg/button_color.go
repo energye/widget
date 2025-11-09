@@ -190,59 +190,70 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 	imgHeight := m.img.Height()
 	imgWidth := m.img.Width()
 	for y := int32(0); y < imgHeight; y++ {
+		// 计算颜色渐变
 		ratio := float64(y) / float64(imgHeight-1)
 		r := round(float64(startR)*(1-ratio) + float64(endR)*ratio)
 		g := round(float64(startG)*(1-ratio) + float64(endG)*ratio)
 		b := round(float64(startB)*(1-ratio) + float64(endB)*ratio)
 		color := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
-		borderColor := color
-		if m.Border.color != 0 {
-			borderColor = ColorToFPColor(m.Border.color, ratio)
-		} else {
-			// 未配置时使用默认颜色, 加深
-			DarkenFPColor(&borderColor, 0.3)
+		borderFPColor := color
+		if m.Border.Direction == 0 {
+			// 没有边框使用默认颜色, 加深
+			DarkenFPColor(&borderFPColor, 0.3)
 		}
 		// 注意：Alpha会在内循环中为每个像素单独设置
 		for x := int32(0); x < imgWidth; x++ {
 			alphaFactor, corners := m.calculateRoundedAlpha(roundedCorners, x, y, imgWidth, imgHeight, radius)
 			_ = corners
 			isBorder := false
+			borderColor := colors.TColor(0)
 			if m.Border.Direction != 0 { // 启用了边框
 				if alphaFactor < 1.0 { // 圆角范围内
 					// TODO 有点小问题. 1: 圆角的边框绘制有瑕疵, 2: 圆角的边框宽度判断未增加
 					if m.Border.Direction.In(BbdLeft) && (corners == RcLeftTop || corners == RcLeftBottom) {
 						// 左边框
+						borderColor = m.BorderColor(BbdLeft)
 						isBorder = true
 					} else if m.Border.Direction.In(BbdTop) && (corners == RcRightTop || corners == RcLeftTop) {
 						// 上边框
+						borderColor = m.BorderColor(BbdTop)
 						isBorder = true
 					} else if m.Border.Direction.In(BbdRight) && (corners == RcRightTop || corners == RcRightBottom) {
 						// 右边框
+						borderColor = m.BorderColor(BbdRight)
 						isBorder = true
 					} else if m.Border.Direction.In(BbdBottom) && (corners == RcLeftBottom || corners == RcRightBottom) {
 						// 下边框
+						borderColor = m.BorderColor(BbdBottom)
 						isBorder = true
 					}
 				} else { // 圆角外
 					if m.Border.Direction.In(BbdLeft) && x < m.BorderWidth(BbdLeft) && y < h {
 						// 左边框
 						isBorder = true
+						borderColor = m.BorderColor(BbdLeft)
 					} else if m.Border.Direction.In(BbdTop) && y < m.BorderWidth(BbdTop) && x <= w {
 						// 上边框
 						isBorder = true
+						borderColor = m.BorderColor(BbdTop)
 					} else if m.Border.Direction.In(BbdRight) && x >= w-m.BorderWidth(BbdRight) && y < h {
 						// 右边框
 						isBorder = true
+						borderColor = m.BorderColor(BbdRight)
 					} else if m.Border.Direction.In(BbdBottom) && x < w && y >= h-m.BorderWidth(BbdBottom) {
 						// 下边框
 						isBorder = true
+						borderColor = m.BorderColor(BbdBottom)
 					}
+				}
+				if borderColor != 0 {
+					borderFPColor = ColorToFPColor(borderColor, ratio)
 				}
 			}
 			actualAlpha := round(float64(alpha) * float64(alphaFactor))
 			if isBorder {
-				borderColor.Alpha = uint16(actualAlpha) << 8
-				m.img.SetColors(x, y, borderColor)
+				borderFPColor.Alpha = uint16(actualAlpha) << 8
+				m.img.SetColors(x, y, borderFPColor)
 			} else {
 				color.Alpha = uint16(actualAlpha) << 8
 				m.img.SetColors(x, y, color)
@@ -293,40 +304,32 @@ func (m *TButtonColor) calculateRoundedAlpha(roundedCorners TRoundedCorners, x, 
 	if roundedCorners.In(RcLeftTop) && x < radius && y < radius {
 		cornerX = radius
 		cornerY = radius
-		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 		inCorner = true
 		corners = RcLeftTop
 	} else if roundedCorners.In(RcRightTop) && x >= width-radius && y < radius {
 		// 右上角区域
 		cornerX = width - radius - 1
 		cornerY = radius
-		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 		inCorner = true
 		corners = RcRightTop
 	} else if roundedCorners.In(RcLeftBottom) && x < radius && y >= height-radius {
 		// 左下角区域
 		cornerX = radius
 		cornerY = height - radius - 1
-		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 		inCorner = true
 		corners = RcLeftBottom
 	} else if roundedCorners.In(RcRightBottom) && x >= width-radius && y >= height-radius {
 		// 右下角区域
 		cornerX = width - radius - 1
 		cornerY = height - radius - 1
-		d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 		inCorner = true
 		corners = RcRightBottom
 	}
 	if !inCorner {
 		alphaValue = 1.0
-		//// 非圆角区域：检查是否在有效矩形内
-		//if x >= radius && x < width-radius && y >= radius && y < height-radius {
-		//	return // 中央矩形区域
-		//}
-		//// 边缘非圆角区域
 		return
 	}
+	d = sqrt(float64(sqr(x-cornerX) + sqr(y-cornerY)))
 	// 抗锯齿过渡处理：根据距离决定 alpha 渐变值
 	const transition = 1.0
 	innerRadius := float32(radius) - transition
