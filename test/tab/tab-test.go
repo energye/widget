@@ -86,14 +86,15 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 
 	addPage := func(count int) {
 		page := tab.NewPage()
+		btn := page.Button()
+		btn.SetBorderWidth(wg.BbdBottom, 2)
+		btn.SetText(RandMixString())
 		page.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
 		testPanel := lcl.NewPanel(page)
 		testPanel.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
 		testPanel.SetTop(int32(rand.Intn(400)))
 		testPanel.SetLeft(int32(rand.Intn(400)))
 		testPanel.SetParent(page)
-		btn := page.Button()
-		btn.SetText(RandMixString())
 		//btn.SetIconFavorite("C:\\app\\workspace\\widget\\test\\tab\\resources\\icon.png")
 		//btn.SetIconClose("C:\\app\\workspace\\widget\\test\\tab\\resources\\close.png")
 		btn.SetIconFavoriteFormBytes(iconData)
@@ -126,16 +127,17 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	add.SetText("添加一个 Tab Page")
 	add.Font().SetColor(colors.ClWhite)
 	add.Font().SetStyle(types.NewSet(types.FsBold))
+	add.SetBorderDirections(0)
 	add.SetOnClick(func(sender lcl.IObject) {
 		addPage(count)
 		count++
 	})
 	add.SetParent(m)
 
-	for i := 0; i < 10; i++ {
-		addPage(count)
-		count++
-	}
+	//for i := 0; i < 10; i++ {
+	//	addPage(count)
+	//	count++
+	//}
 	lcl.RunOnMainThreadAsync(func(id uint32) {
 		tab.RecalculatePosition()
 	})

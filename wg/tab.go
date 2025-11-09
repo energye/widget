@@ -115,7 +115,7 @@ func (m *TTab) NewPage() *TPage {
 	button.SetDefaultColor(defaultColor, defaultColor)
 	button.SetEnterColor(DarkenColor(defaultColor, 0.1), DarkenColor(defaultColor, 0.1))
 	button.SetDownColor(DarkenColor(defaultColor, 0.2), DarkenColor(defaultColor, 0.2))
-	button.SetBorderColor(DarkenColor(defaultColor, 0.3))
+	button.SetBorderColor(BbdNone, DarkenColor(defaultColor, 0.3))
 	button.SetParent(m)
 	page.button = button
 

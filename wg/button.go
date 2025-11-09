@@ -105,12 +105,19 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.downColor.type_ = bsDown
 	m.disabledColor = NewButtonColor()
 	m.disabledColor.type_ = bsDisabled
-	m.SetDisabledColor(defaultButtonColorDisable, defaultButtonColorDisable)
-
+	// 设置按钮颜色
 	m.SetColor(defaultButtonColor)
-	m.SetBorderColor(defaultButtonColor)
+	// 设置禁用颜色
+	m.SetDisabledColor(defaultButtonColorDisable, defaultButtonColorDisable)
+	// 启用边框
 	m.SetBorderDirections(types.NewSet(BbdLeft, BbdTop, BbdRight, BbdBottom))
-
+	// 边框宽度 1px
+	m.SetBorderWidth(0, 1)
+	// TODO WndProc
+	//m.SetOnWndProc(func(theMessage *types.TLMessage) {
+	//	m.InheritedWndProc(theMessage)
+	//	fmt.Println(theMessage.Msg)
+	//})
 	// 销毁事件
 	m.SetOnDestroy(func() {
 		//fmt.Println("Graphic Button 释放资源")
@@ -432,6 +439,7 @@ func (m *TButton) SetIconCloseHighlightFormBytes(pngData []byte) {
 	m.iconCloseHighlight.LoadFromStream(mem)
 }
 
+// 绘制事件
 func (m *TButton) paint(sender lcl.IObject) {
 	if !m.IsValid() {
 		return
@@ -445,14 +453,14 @@ func (m *TButton) SetOnCloseClick(fn lcl.TNotifyEvent) {
 	m.onCloseClick = fn
 }
 
-// 强制重新绘制刷新缓存, 在某些情况可能是比较耗时的操作
+// ForcePaint 强制刷新缓存, 在某些情况可能是比较耗时的操作
 // fn: 缓存刷新完成的回调函数, 非线程安全
 func (m *TButton) ForcePaint(fn func()) {
 	if m.forcePaint != nil {
 		m.forcePaint.Stop()
 		m.forcePaint = nil
 	}
-	m.forcePaint = time.AfterFunc(time.Second/60, func() {
+	m.forcePaint = time.AfterFunc(time.Second/16, func() {
 		m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 		m.enterColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 		m.downColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
@@ -500,6 +508,9 @@ func (m *TButton) DefaultColor() (start, end colors.TColor) {
 	return
 }
 
+// SetEnterColor 设置按钮进入状态时的颜色渐变效果
+// start: 渐变开始颜色
+// end: 渐变结束颜色
 func (m *TButton) SetEnterColor(start, end colors.TColor) {
 	m.enterColor.start = start
 	m.enterColor.end = end
@@ -512,6 +523,9 @@ func (m *TButton) EnterColor() (start, end colors.TColor) {
 	return
 }
 
+// SetDownColor 设置按钮按下状态时的颜色渐变效果
+// start: 按下状态渐变起始颜色
+// end: 按下状态渐变结束颜色
 func (m *TButton) SetDownColor(start, end colors.TColor) {
 	m.downColor.start = start
 	m.downColor.end = end
@@ -524,18 +538,23 @@ func (m *TButton) DownColor() (start, end colors.TColor) {
 	return
 }
 
+// SetDisabledColor 设置按钮禁用状态时的渐变颜色
+// start: 渐变起始颜色
+// end: 渐变结束颜色
 func (m *TButton) SetDisabledColor(start, end colors.TColor) {
 	m.disabledColor.start = start
 	m.disabledColor.end = end
 	m.disabledColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
 
+// DisabledColor 返回禁用颜色
 func (m *TButton) DisabledColor() (start, end colors.TColor) {
 	start = m.disabledColor.start
 	end = m.disabledColor.end
 	return
 }
 
+// SetColor 设置按钮的颜色渐变为同一颜色
 func (m *TButton) SetColor(color colors.TColor) {
 	m.SetColorGradient(color, color)
 }
@@ -551,16 +570,27 @@ func (m *TButton) SetColorGradient(start, end colors.TColor) {
 
 // SetBorderColor 设置按钮所有状态下的边框颜色
 //
-// 参数:
-//
 //	color - 指定的边框颜色值
-//
-// 该函数会同时设置按钮在默认、悬停、按下和禁用状态下的边框颜色
-// 为统一的颜色值，实现按钮边框颜色的整体变更
-func (m *TButton) SetBorderColor(color colors.TColor) {
-	m.defaultColor.SetBorderColor(0, color)
-	m.enterColor.SetBorderColor(0, DarkenColor(color, 0.1))
-	m.downColor.SetBorderColor(0, DarkenColor(color, 0.2))
+//	该函数会同时设置按钮在默认、悬停、按下和禁用状态下的边框颜色
+//	为统一的颜色值，实现按钮边框颜色的整体变更
+func (m *TButton) SetBorderColor(direction TButtonBorderDirection, color colors.TColor) {
+	m.defaultColor.SetBorderColor(direction, color)
+	m.enterColor.SetBorderColor(direction, DarkenColor(color, 0.1))
+	m.downColor.SetBorderColor(direction, DarkenColor(color, 0.2))
+	m.ForcePaint(func() {
+		m.Invalidate()
+	})
+}
+
+// SetBorderWidth 设置按钮的边框宽度
+// width: 边框宽度值
+func (m *TButton) SetBorderWidth(direction TButtonBorderDirection, width int32) {
+	m.defaultColor.SetBorderWidth(direction, width)
+	m.enterColor.SetBorderWidth(direction, width)
+	m.downColor.SetBorderWidth(direction, width)
+	m.ForcePaint(func() {
+		m.Invalidate()
+	})
 }
 
 // SetBorderDirections 设置按钮的所有状态边框样式
@@ -575,6 +605,9 @@ func (m *TButton) SetBorderDirections(directions TButtonBorderDirections) {
 	m.enterColor.Border.Direction = directions
 	m.downColor.Border.Direction = directions
 	m.disabledColor.Border.Direction = directions
+	m.ForcePaint(func() {
+		m.Invalidate()
+	})
 }
 
 func (m *TButton) SetAlpha(alpha byte) {

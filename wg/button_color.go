@@ -77,18 +77,21 @@ func (m *TButtonColor) SetBorderWidth(direction TButtonBorderDirection, width in
 //
 //	direction: 边框方向枚举值，指定要获取哪个方向的边框宽度
 //	int32: 指定方向的边框宽度值，如果方向无效则返回默认宽度
-func (m *TButtonColor) BorderWidth(direction TButtonBorderDirection) int32 {
+func (m *TButtonColor) BorderWidth(direction TButtonBorderDirection) (width int32) {
 	switch direction {
 	case BbdLeft:
-		return m.Border.leftWidth
+		width = m.Border.leftWidth
 	case BbdTop:
-		return m.Border.topWidth
+		width = m.Border.topWidth
 	case BbdRight:
-		return m.Border.rightWidth
+		width = m.Border.rightWidth
 	case BbdBottom:
-		return m.Border.bottomWidth
+		width = m.Border.bottomWidth
 	}
-	return m.Border.width
+	if width == 0 {
+		width = m.Border.width
+	}
+	return
 }
 
 // SetBorderColor 设置按钮边框颜色
@@ -112,18 +115,21 @@ func (m *TButtonColor) SetBorderColor(direction TButtonBorderDirection, color co
 // BorderColor 根据指定的边框方向返回对应的边框颜色
 // direction: 边框方向枚举值，指定要获取哪个方向的边框颜色
 // colors.TColor: 指定方向的边框颜色值，如果方向无效则返回0
-func (m *TButtonColor) BorderColor(direction TButtonBorderDirection) colors.TColor {
+func (m *TButtonColor) BorderColor(direction TButtonBorderDirection) (color colors.TColor) {
 	switch direction {
 	case BbdLeft:
-		return m.Border.colorLeft
+		color = m.Border.colorLeft
 	case BbdTop:
-		return m.Border.colorTop
+		color = m.Border.colorTop
 	case BbdRight:
-		return m.Border.colorRight
+		color = m.Border.colorRight
 	case BbdBottom:
-		return m.Border.colorBottom
+		color = m.Border.colorBottom
 	}
-	return m.Border.color
+	if color == 0 {
+		color = m.Border.color
+	}
+	return
 }
 
 // forcePaint 强制绘制按钮颜色
@@ -170,11 +176,7 @@ func (m *TButtonColor) tryPaint(roundedCorners TRoundedCorners, rect types.TRect
 //	alpha: 图像的整体透明度，取值范围 0-255
 //	radius: 圆角的半径大小
 func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect, alpha byte, radius int32) {
-	var (
-		borderWidth = int32(1) // 边框宽度
-		w, h        = rect.Width(), rect.Height()
-	)
-
+	w, h := rect.Width(), rect.Height()
 	// 提取起始颜色和结束颜色的 RGB 分量，用于计算渐变过程中的颜色插值
 	startR := colors.Red(m.start)
 	startG := colors.Green(m.start)
@@ -198,7 +200,7 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 			borderColor = ColorToFPColor(m.Border.color, ratio)
 		} else {
 			// 未配置时使用默认颜色, 加深
-			DarkenFPColor(&borderColor, 0.5)
+			DarkenFPColor(&borderColor, 0.3)
 		}
 		// 注意：Alpha会在内循环中为每个像素单独设置
 		for x := int32(0); x < imgWidth; x++ {
@@ -207,6 +209,7 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 			isBorder := false
 			if m.Border.Direction != 0 { // 启用了边框
 				if alphaFactor < 1.0 { // 圆角范围内
+					// TODO 有点小问题. 1: 圆角的边框绘制有瑕疵, 2: 圆角的边框宽度判断未增加
 					if m.Border.Direction.In(BbdLeft) && (corners == RcLeftTop || corners == RcLeftBottom) {
 						// 左边框
 						isBorder = true
@@ -221,16 +224,16 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 						isBorder = true
 					}
 				} else { // 圆角外
-					if m.Border.Direction.In(BbdLeft) && x < borderWidth && y < h {
+					if m.Border.Direction.In(BbdLeft) && x < m.BorderWidth(BbdLeft) && y < h {
 						// 左边框
 						isBorder = true
-					} else if m.Border.Direction.In(BbdTop) && y < borderWidth && x <= w {
+					} else if m.Border.Direction.In(BbdTop) && y < m.BorderWidth(BbdTop) && x <= w {
 						// 上边框
 						isBorder = true
-					} else if m.Border.Direction.In(BbdRight) && x >= w-borderWidth && y < h {
+					} else if m.Border.Direction.In(BbdRight) && x >= w-m.BorderWidth(BbdRight) && y < h {
 						// 右边框
 						isBorder = true
-					} else if m.Border.Direction.In(BbdBottom) && x < w && y >= h-borderWidth {
+					} else if m.Border.Direction.In(BbdBottom) && x < w && y >= h-m.BorderWidth(BbdBottom) {
 						// 下边框
 						isBorder = true
 					}
@@ -255,21 +258,20 @@ func (m *TButtonColor) SetColor(start, end colors.TColor) {
 	m.end = end
 }
 
-// calculateRoundedAlpha 根据给定的圆角信息计算按钮颜色在指定坐标点 (x, y) 处的 alpha 值，
-// 用于实现抗锯齿效果的圆角矩形绘制。
+// calculateRoundedAlpha 根据给定的圆角信息和像素位置，计算该点在按钮背景中的 alpha 值以及所属的圆角类型。
+// 用于实现抗锯齿效果的圆角绘制逻辑。
 //
 // 参数说明：
 //
-//	roundedCorners: 指定哪些角落需要绘制为圆角（TRoundedCorners 类型）
-//	x: 当前像素点的横坐标
-//	y: 当前像素点的纵坐标
-//	width: 矩形区域的宽度
-//	height: 矩形区域的高度
-//	radius: 圆角半径
+//	roundedCorners: 指示哪些角落需要绘制为圆角（TRoundedCorners 类型）
+//	x, y: 当前像素点相对于控件左上角的坐标
+//	width, height: 控件的宽高尺寸
+//	radius: 预期设置的圆角半径
 //
-// 返回值：
+// 返回值说明：
 //
-//	float32: 当前点的 alpha 值，范围 [0.0, 1.0]，表示透明度（0 为完全透明，1 为不透明）
+//	alphaValue: 当前点的透明度值，范围 [0.0, 1.0]
+//	corners: 所属的圆角类型（如 RcLeftTop、RcRightBottom 等），若不在圆角区域则为默认值
 func (m *TButtonColor) calculateRoundedAlpha(roundedCorners TRoundedCorners, x, y, width, height, radius int32) (alphaValue float32, corners RoundedCorner) {
 	// 计算实际可用最大半径（不超过尺寸限制）
 	maxRadius := min(width/2, height/2)
@@ -411,9 +413,9 @@ func GrayColor(color types.TColor) types.TColor {
 // color: 指向TFPColor结构体的指针，表示要处理的颜色
 // factor: 浮点数，表示变暗因子，取值范围通常在0.0-1.0之间，值越大颜色越暗
 func DarkenFPColor(color *lcl.TFPColor, factor float64) {
-	r := uint16(round(float64(color.Red) * (1.0 - factor)))
-	g := uint16(round(float64(color.Green) * (1.0 - factor)))
-	b := uint16(round(float64(color.Blue) * (1.0 - factor)))
+	r := uint16(float64(color.Red) * (1.0 - factor))
+	g := uint16(float64(color.Green) * (1.0 - factor))
+	b := uint16(float64(color.Blue) * (1.0 - factor))
 	color.Red = r
 	color.Green = g
 	color.Blue = b
