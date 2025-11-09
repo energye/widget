@@ -197,10 +197,6 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 		b := round(float64(startB)*(1-ratio) + float64(endB)*ratio)
 		color := lcl.TFPColor{Red: uint16(r) << 8, Green: uint16(g) << 8, Blue: uint16(b) << 8}
 		borderFPColor := color
-		if m.Border.Direction == 0 {
-			// 没有边框使用默认颜色, 加深
-			DarkenFPColor(&borderFPColor, 0.3)
-		}
 		// 注意：Alpha会在内循环中为每个像素单独设置
 		for x := int32(0); x < imgWidth; x++ {
 			alphaFactor, corners := m.calculateRoundedAlpha(roundedCorners, x, y, imgWidth, imgHeight, radius)

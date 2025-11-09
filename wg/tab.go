@@ -138,9 +138,7 @@ func (m *TTab) NewPage() *TPage {
 
 	m.pages = append(m.pages, page) // 添加到页列表
 	page.initEvent()                // 初始化事件
-	//m.HideAllActivated()            // 隐藏所有激活的
-	page.Active(false)
-	//m.RecalculatePosition()         // 重新计算位置
+	page.SetActive(false)
 
 	// 事件处理
 	tabSheet.SetOnShow(func(sender lcl.IObject) {
@@ -251,7 +249,7 @@ func (m *TTab) scrollBtnPosition() {
 func (m *TTab) HideAllActivated() {
 	for _, page := range m.pages {
 		if page.active {
-			page.Active(false)
+			page.SetActive(false)
 		}
 	}
 }
@@ -280,7 +278,7 @@ func (m *TTab) RemovePage(removePage *TPage) {
 		}
 		if showPage != nil {
 			m.HideAllActivated()
-			showPage.Active(true)
+			showPage.SetActive(true)
 		}
 	}
 	m.deleting = false
@@ -314,8 +312,12 @@ func (m *TPage) SetDefaultColor(color types.TColor) {
 	m.defaultColor = color
 }
 
+func (m *TPage) Active() bool {
+	return m.active
+}
+
 // 激活自己, 会取消其它激活的
-func (m *TPage) Active(active bool) {
+func (m *TPage) SetActive(active bool) {
 	m.active = active
 	if active {
 		m.ICustomPanel.Show()
@@ -333,14 +335,14 @@ func (m *TPage) Active(active bool) {
 // 隐藏自己, button 和 page 同时隐藏
 func (m *TPage) Hide() {
 	m.button.Hide()
-	m.Active(false)
+	m.SetActive(false)
 	m.tab.RecalculatePosition()
 }
 
 // 显示自己, button 和 page 同时显示
 func (m *TPage) Show() {
 	m.button.Show()
-	m.Active(true)
+	m.SetActive(true)
 	m.tab.RecalculatePosition()
 }
 
@@ -359,7 +361,7 @@ func (m *TPage) SetOnClose(fn lcl.TNotifyEvent) {
 func (m *TPage) initEvent() {
 	m.button.SetOnClick(func(sender lcl.IObject) {
 		m.tab.HideAllActivated()
-		m.Active(true)
+		m.SetActive(true)
 	})
 	m.button.SetOnCloseClick(func(sender lcl.IObject) {
 		if m.tab.deleting {

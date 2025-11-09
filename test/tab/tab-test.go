@@ -72,13 +72,10 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	borderSet := func() {
 		pageSize := len(tab.Pages())
 		for i, page := range tab.Pages() {
-			if i < pageSize-1 {
-				page.Button().SetBorderDirections(types.NewSet(wg.BbdLeft, wg.BbdTop, wg.BbdBottom))
-			} else {
+			if i == pageSize-1 {
 				page.Button().SetBorderDirections(types.NewSet(wg.BbdLeft, wg.BbdTop, wg.BbdBottom, wg.BbdRight))
-				page.Button().ForcePaint(func() {
-					page.Button().Invalidate()
-				})
+			} else if page.Active() {
+				page.Button().SetBorderDirections(types.NewSet(wg.BbdLeft, wg.BbdTop, wg.BbdBottom))
 			}
 		}
 
@@ -110,7 +107,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		testButton.Font().SetStyle(types.NewSet(types.FsBold))
 		testButton.SetParent(page)
 		tab.HideAllActivated()
-		page.Active(true)
+		page.SetActive(true)
 		tab.RecalculatePosition()
 
 		page.SetOnClose(func(sender lcl.IObject) {
