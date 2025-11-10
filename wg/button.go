@@ -510,6 +510,7 @@ func (m *TButton) SetOnCloseClick(fn lcl.TNotifyEvent) {
 
 // ForcePaint 强制刷新缓存, 在某些情况可能是比较耗时的操作
 // fn: 缓存刷新完成的回调函数, 非线程安全
+// 一搬在修改颜色后使用, 然后在调用回调函数内调用 Invalidate
 func (m *TButton) ForcePaint(fn func()) {
 	if m.forcePaint != nil {
 		m.forcePaint.Stop()
@@ -554,7 +555,7 @@ func (m *TButton) SetDefaultColor(start, end colors.TColor) {
 	// 更新按钮默认颜色配置
 	m.defaultColor.start = start
 	m.defaultColor.end = end
-	m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+	//m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
 
 func (m *TButton) DefaultColor() (start, end colors.TColor) {
@@ -569,7 +570,7 @@ func (m *TButton) DefaultColor() (start, end colors.TColor) {
 func (m *TButton) SetEnterColor(start, end colors.TColor) {
 	m.enterColor.start = start
 	m.enterColor.end = end
-	m.enterColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+	//m.enterColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
 
 func (m *TButton) EnterColor() (start, end colors.TColor) {
@@ -584,7 +585,7 @@ func (m *TButton) EnterColor() (start, end colors.TColor) {
 func (m *TButton) SetDownColor(start, end colors.TColor) {
 	m.downColor.start = start
 	m.downColor.end = end
-	m.downColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+	//m.downColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
 
 func (m *TButton) DownColor() (start, end colors.TColor) {
@@ -599,7 +600,7 @@ func (m *TButton) DownColor() (start, end colors.TColor) {
 func (m *TButton) SetDisabledColor(start, end colors.TColor) {
 	m.disabledColor.start = start
 	m.disabledColor.end = end
-	m.disabledColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+	//m.disabledColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
 }
 
 // DisabledColor 返回禁用颜色

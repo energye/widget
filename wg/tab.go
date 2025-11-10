@@ -331,12 +331,16 @@ func (m *TPage) SetActive(active bool) {
 		m.ICustomPanel.Show()
 		m.tabSheet.Show()
 		m.button.SetDefaultColor(m.activeColor, m.activeColor)
-		m.button.Invalidate()
+		m.button.ForcePaint(func() {
+			m.button.Invalidate()
+		})
 	} else {
 		m.ICustomPanel.Hide()
 		m.tabSheet.Hide()
 		m.button.SetDefaultColor(m.defaultColor, m.defaultColor)
-		m.button.Invalidate()
+		m.button.ForcePaint(func() {
+			m.button.Invalidate()
+		})
 	}
 }
 
