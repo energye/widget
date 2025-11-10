@@ -161,6 +161,14 @@ func (m *TTab) SetOnChange(fn lcl.TNotifyEvent) {
 	m.onChange = fn
 }
 
+func (m *TTab) ScrollLeft() *TButton {
+	return m.scrollLeftBtn
+}
+
+func (m *TTab) ScrollRight() *TButton {
+	return m.scrollRightBtn
+}
+
 func (m *TTab) EnableScrollButton(value bool) {
 	m.scrollLeftBtn.SetVisible(value)
 	m.scrollRightBtn.SetVisible(value)
