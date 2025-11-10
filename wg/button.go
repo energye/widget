@@ -69,6 +69,10 @@ type TButton struct {
 	downColor     *TButtonColor
 	disabledColor *TButtonColor
 	forcePaint    *time.Timer
+	// 提示
+	closeHintTimer *time.Timer
+	closeHint      lcl.IHintWindow
+	closeHintText  string
 }
 
 func NewButton(owner lcl.IComponent) *TButton {
@@ -113,6 +117,8 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.SetBorderDirections(types.NewSet(BbdLeft, BbdTop, BbdRight, BbdBottom))
 	// 边框宽度 1px
 	m.SetBorderWidth(0, 1)
+
+	m.closeHint = lcl.NewHintWindow(nil)
 	// TODO WndProc
 	//m.SetOnWndProc(func(theMessage *types.TLMessage) {
 	//	m.InheritedWndProc(theMessage)
@@ -144,6 +150,49 @@ func NewButton(owner lcl.IComponent) *TButton {
 	return m
 }
 
+func (m *TButton) SetCloseHintText(text string) {
+	m.closeHintText = text
+}
+
+// ShowHint 显示按钮的提示信息
+// text: 要显示的提示文本内容
+func (m *TButton) ShowHint(text string) {
+	if text == "" {
+		return
+	}
+	if m.isEnterClose && m.closeHintTimer != nil {
+		return
+	}
+	m.closeHintTimer = time.AfterFunc(time.Second/2, func() {
+		if !m.isEnterClose {
+			return
+		}
+		lcl.RunOnMainThreadAsync(func(id uint32) {
+			if !m.isEnterClose {
+				return
+			}
+			cursorPos := lcl.Mouse.CursorPos()
+			hintRect := m.closeHint.CalcHintRect(0, text, 0)
+			w, h := hintRect.Width(), hintRect.Height()
+			hintRect.Left = cursorPos.X + 15
+			hintRect.Top = cursorPos.Y + 15
+			hintRect.SetWidth(w)
+			hintRect.SetHeight(h)
+			m.closeHint.ActivateHintWithRectString(hintRect, text)
+		})
+	})
+}
+
+func (m *TButton) HideHint() {
+	if m.closeHintTimer != nil {
+		m.closeHintTimer.Stop()
+		m.closeHintTimer = nil
+		lcl.RunOnMainThreadAsync(func(id uint32) {
+			m.closeHint.Hide()
+		})
+	}
+}
+
 func (m *TButton) enter(sender lcl.IObject) {
 	if m.isDisable || !m.IsValid() {
 		return
@@ -171,16 +220,11 @@ func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift type
 	if m.isDisable || !m.IsValid() {
 		return
 	}
-	if m.isCloseArea(X, Y) {
-		if m.onCloseClick != nil {
-			m.onCloseClick(sender)
-		}
-	} else {
-		m.buttonState = bsDown
-		m.Invalidate()
-		if m.onMouseDown != nil {
-			m.onMouseDown(sender, button, shift, X, Y)
-		}
+	m.HideHint()
+	m.buttonState = bsDown
+	m.Invalidate()
+	if m.onMouseDown != nil {
+		m.onMouseDown(sender, button, shift, X, Y)
 	}
 }
 
@@ -188,10 +232,16 @@ func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.
 	if m.isDisable || !m.IsValid() {
 		return
 	}
-	m.buttonState = bsEnter
-	m.Invalidate()
-	if m.onMouseUp != nil {
-		m.onMouseUp(sender, button, shift, X, Y)
+	if m.isCloseArea(X, Y) {
+		if m.onCloseClick != nil {
+			m.onCloseClick(sender)
+		}
+	} else {
+		m.buttonState = bsEnter
+		m.Invalidate()
+		if m.onMouseUp != nil {
+			m.onMouseUp(sender, button, shift, X, Y)
+		}
 	}
 }
 
@@ -217,10 +267,12 @@ func (m *TButton) isCloseArea(X int32, Y int32) bool {
 	if m.isDisable || !m.IsValid() {
 		return false
 	}
-	rect := m.ClientRect()
-	closeX := rect.Width() - m.iconClose.Width() - iconMargin
-	closeY := rect.Height()/2 - m.iconClose.Height()/2
-	return X >= closeX && X <= rect.Width()-iconMargin && Y >= closeY && Y <= rect.Height()/2+m.iconClose.Height()
+	btnRect := m.ClientRect()
+	closeW := m.iconClose.Width()
+	closeH := m.iconClose.Height()
+	closeX := btnRect.Width() - closeW - iconMargin
+	closeY := btnRect.Height()/2 - closeH/2
+	return X >= closeX && X <= btnRect.Width()-iconMargin && Y >= closeY && Y <= btnRect.Height()/2+closeH/2
 }
 
 func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y int32) {
@@ -229,14 +281,17 @@ func (m *TButton) move(sender lcl.IObject, shift types.TShiftState, X int32, Y i
 	}
 	lcl.Screen.SetCursor(types.CrDefault)
 	if m.isCloseArea(X, Y) {
+		m.ShowHint(m.closeHintText)
 		if !m.isEnterClose {
 			m.isEnterClose = true
 			m.Invalidate()
 		}
+		return
 	} else if m.isEnterClose {
 		m.isEnterClose = false
 		m.Invalidate()
 	}
+	m.HideHint()
 }
 
 func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect) {
