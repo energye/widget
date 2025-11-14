@@ -375,10 +375,15 @@ func (m *TPage) SetOnClick(fn lcl.TNotifyEvent) {
 	m.onClick = fn
 }
 
+// 是否进入关闭按钮
+func (m *TPage) IsEnterClose() bool {
+	return m.button.isEnterClose
+}
+
 func (m *TPage) initEvent() {
 	m.button.SetOnClick(func(sender lcl.IObject) {
 		// 关闭按钮位置, 不触发事件
-		if m.button.isEnterClose {
+		if m.IsEnterClose() {
 			return
 		}
 		m.tab.HideAllActivated()
