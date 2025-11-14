@@ -43,6 +43,7 @@ type TPage struct {
 	onShow       lcl.TNotifyEvent
 	onHide       lcl.TNotifyEvent
 	onClose      lcl.TNotifyEvent
+	onClick      lcl.TNotifyEvent
 	activeColor  types.TColor //
 	defaultColor types.TColor //
 }
@@ -370,10 +371,21 @@ func (m *TPage) SetOnClose(fn lcl.TNotifyEvent) {
 	m.onClose = fn
 }
 
+func (m *TPage) SetOnClick(fn lcl.TNotifyEvent) {
+	m.onClick = fn
+}
+
 func (m *TPage) initEvent() {
 	m.button.SetOnClick(func(sender lcl.IObject) {
+		// 关闭按钮位置, 不触发事件
+		if m.button.isEnterClose {
+			return
+		}
 		m.tab.HideAllActivated()
 		m.SetActive(true)
+		if m.onClick != nil {
+			m.onClick(sender)
+		}
 	})
 	m.button.SetOnCloseClick(func(sender lcl.IObject) {
 		if m.tab.deleting {
@@ -383,7 +395,7 @@ func (m *TPage) initEvent() {
 		lcl.RunOnMainThreadAsync(func(id uint32) {
 			m.Remove()
 			if m.onClose != nil {
-				m.onClose(m)
+				m.onClose(sender)
 			}
 		})
 	})
