@@ -59,7 +59,6 @@ type TButton struct {
 	onPaint      lcl.TNotifyEvent
 	onMouseEnter lcl.TNotifyEvent
 	onMouseLeave lcl.TNotifyEvent
-	onClick      lcl.TNotifyEvent
 	onMouseDown  lcl.TMouseEvent
 	onMouseUp    lcl.TMouseEvent
 	// 默认颜色, 移入颜色, 按下颜色, 禁用颜色
