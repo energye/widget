@@ -229,6 +229,7 @@ func (m *TTab) RecalculatePosition() {
 	}
 	for _, page := range m.pages {
 		if page.button.Visible() {
+			page.button.AutoSizeWidth()
 			br := page.button.BoundsRect()
 			width := br.Width()
 			br.Left = widths

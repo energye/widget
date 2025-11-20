@@ -5,13 +5,13 @@ import (
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
+	"github.com/energye/widget/test/util"
+	"github.com/energye/widget/wg"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-	"widget/test/util"
-	"widget/wg"
 )
 
 func init() {
@@ -85,7 +85,8 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		page := tab.NewPage()
 		btn := page.Button()
 		btn.SetBorderWidth(wg.BbdBottom, 2)
-		btn.SetText(RandMixString())
+		text := RandMixString()
+		btn.SetText(text)
 		page.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
 		testPanel := lcl.NewPanel(page)
 		testPanel.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
@@ -131,10 +132,10 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	})
 	add.SetParent(m)
 
-	//for i := 0; i < 10; i++ {
-	//	addPage(count)
-	//	count++
-	//}
+	for i := 0; i < 10; i++ {
+		addPage(count)
+		count++
+	}
 	lcl.RunOnMainThreadAsync(func(id uint32) {
 		tab.RecalculatePosition()
 	})

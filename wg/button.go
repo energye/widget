@@ -389,23 +389,26 @@ func (m *TButton) Caption() string {
 
 func (m *TButton) SetText(value string) {
 	m.text = value
+	m.AutoSizeWidth()
+	m.Invalidate()
+}
+
+// 自动大小, 根据文本宽自动调整按钮宽度
+func (m *TButton) AutoSizeWidth() {
 	if m.autoSize {
-		lcl.RunOnMainThreadAsync(func(id uint32) {
-			// 自动大小, 根据文本宽自动调整按钮宽度
-			leftArea := int32(0)
-			if m.iconFavorite.Width() > 0 {
-				leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
-			}
-			rightArea := int32(0)
-			if m.iconClose.Width() > 0 {
-				rightArea = iconMargin + m.iconClose.Width() + iconMargin
-			}
-			textWidth := m.Canvas().TextWidthWithUnicodestring(m.text)
-			width := textWidth + leftArea + rightArea + iconMargin*2
+		leftArea := int32(0)
+		if m.iconFavorite.Width() > 0 {
+			leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
+		}
+		rightArea := int32(0)
+		if m.iconClose.Width() > 0 {
+			rightArea = iconMargin + m.iconClose.Width() + iconMargin
+		}
+		textWidth := m.Canvas().TextWidthWithString(m.text)
+		width := textWidth + leftArea + rightArea + iconMargin*2
+		if m.Width() != width {
 			m.SetWidth(width)
-		})
-	} else {
-		m.Invalidate()
+		}
 	}
 }
 
