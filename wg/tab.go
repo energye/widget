@@ -4,9 +4,9 @@ import (
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
+	"github.com/energye/widget/assets"
 	"strconv"
 	"time"
-	"widget/assets"
 )
 
 var (
