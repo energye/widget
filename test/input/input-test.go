@@ -47,7 +47,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	{
 		var inputs []*wg.TInput
 		newInput := func(h int32) {
-			for i := int32(0); i < 10; i++ {
+			for i := int32(0); i < 1; i++ {
 				cus := wg.NewInput(m)
 				cus.Font().SetSize(12)
 				cus.Font().SetColor(colors.Cl3DFace)
@@ -56,20 +56,24 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 				cus.Text = time.Now().String()
 				cus.SetLeft(i*cus.Width() + 10)
 				cus.SetTop(h + 10)
+				cus.Edit.SetLeft(i*cus.Width() + 10)
+				cus.Edit.SetTop(h + 10)
 				cus.SetParent(m)
 				inputs = append(inputs, cus)
 			}
 		}
-		for h := int32(0); h < 15; h++ {
-			newInput(h * 40)
-		}
-		go func() {
-			for {
-				time.Sleep(time.Second / 2)
-				for _, input := range inputs {
-					go input.Invalidate()
-				}
-			}
-		}()
+		newInput(1 * 40)
+		newInput(2 * 40)
+		//for h := int32(0); h < 15; h++ {
+		//	newInput(h * 40)
+		//}
+		//go func() {
+		//	for {
+		//		time.Sleep(time.Second / 2)
+		//		for _, input := range inputs {
+		//			go input.Invalidate()
+		//		}
+		//	}
+		//}()
 	}
 }
