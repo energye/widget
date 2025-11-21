@@ -398,12 +398,7 @@ func (m *TPage) initEvent() {
 			return
 		}
 		m.tab.deleting = true
-		lcl.RunOnMainThreadAsync(func(id uint32) {
-			m.Remove()
-			if m.onClose != nil {
-				m.onClose(sender)
-			}
-		})
+		m.Close()
 	})
 	m.SetOnResize(func(sender lcl.IObject) {
 		// 滚动导航按钮 位置调整
@@ -413,4 +408,14 @@ func (m *TPage) initEvent() {
 
 func (m *TPage) Button() *TButton {
 	return m.button
+}
+
+func (m *TPage) Close() {
+	m.button.isEnterClose = true
+	lcl.RunOnMainThreadAsync(func(id uint32) {
+		m.Remove()
+		if m.onClose != nil {
+			m.onClose(m.button)
+		}
+	})
 }
