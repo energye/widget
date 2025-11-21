@@ -9,16 +9,9 @@ import (
 
 func TestLoadLibPath() {
 	var (
-		name  string
+		name  = libname.GetDLLName()
 		wd, _ = os.Getwd()
 	)
-	if tool.IsWindows() {
-		name = "liblcl.dll"
-	} else if tool.IsLinux() {
-		name = "liblcl.so"
-	} else if tool.IsDarwin() {
-		name = "liblcl.dylib"
-	}
 	if name != "" {
 		// 当前目录
 		liblcl := filepath.Join(wd, name)
@@ -28,7 +21,7 @@ func TestLoadLibPath() {
 		}
 		// 测试编译输出目录
 		if tool.IsWindows() {
-			liblcl = filepath.Join("E:\\SWT\\gopath\\src\\github.com\\energye\\workspace\\gen\\gout", name)
+			liblcl = filepath.Join("C:\\app\\workspace\\gen\\gout", name)
 		} else if tool.IsLinux() {
 			liblcl = filepath.Join("/home/yanghy/app/projects/workspace/gen/gout", name)
 		} else if tool.IsDarwin() {

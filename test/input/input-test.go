@@ -4,11 +4,11 @@ import (
 	"github.com/energye/lcl/lcl"
 	"github.com/energye/lcl/types"
 	"github.com/energye/lcl/types/colors"
+	"github.com/energye/widget/test/util"
+	"github.com/energye/widget/wg"
 	"os"
 	"path/filepath"
 	"time"
-	"widget/test/util"
-	"widget/wg"
 )
 
 func init() {
