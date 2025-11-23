@@ -67,7 +67,7 @@ type TButton struct {
 	enterColor    *TButtonColor
 	downColor     *TButtonColor
 	disabledColor *TButtonColor
-	forcePaint    *time.Timer
+	//forcePaint    *time.Timer
 	// 提示
 	closeHintTimer *time.Timer
 	closeHint      lcl.IHintWindow
@@ -390,25 +390,28 @@ func (m *TButton) Caption() string {
 func (m *TButton) SetText(value string) {
 	m.text = value
 	m.AutoSizeWidth()
-	m.Invalidate()
 }
 
 // 自动大小, 根据文本宽自动调整按钮宽度
 func (m *TButton) AutoSizeWidth() {
 	if m.autoSize {
-		leftArea := int32(0)
-		if m.iconFavorite.Width() > 0 {
-			leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
-		}
-		rightArea := int32(0)
-		if m.iconClose.Width() > 0 {
-			rightArea = iconMargin + m.iconClose.Width() + iconMargin
-		}
-		textWidth := m.Canvas().TextWidthWithString(m.text)
-		width := textWidth + leftArea + rightArea + iconMargin*2
-		if m.Width() != width {
-			m.SetWidth(width)
-		}
+		lcl.RunOnMainThreadAsync(func(id uint32) {
+			leftArea := int32(0)
+			if m.iconFavorite.Width() > 0 {
+				leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
+			}
+			rightArea := int32(0)
+			if m.iconClose.Width() > 0 {
+				rightArea = iconMargin + m.iconClose.Width() + iconMargin
+			}
+			textWidth := m.Canvas().TextWidthWithString(m.text)
+			width := textWidth + leftArea + rightArea + iconMargin*2
+			if m.Width() != width {
+				m.SetWidth(width)
+			}
+		})
+	} else {
+		m.Invalidate()
 	}
 }
 
@@ -514,20 +517,20 @@ func (m *TButton) SetOnCloseClick(fn lcl.TNotifyEvent) {
 // fn: 缓存刷新完成的回调函数, 非线程安全
 // 一搬在修改颜色后使用, 然后在调用回调函数内调用 Invalidate
 func (m *TButton) ForcePaint(fn func()) {
-	if m.forcePaint != nil {
-		m.forcePaint.Stop()
-		m.forcePaint = nil
+	//if m.forcePaint != nil {
+	//	m.forcePaint.Stop()
+	//	m.forcePaint = nil
+	//}
+	//m.forcePaint = time.AfterFunc(time.Second/16, func() {
+	m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+	m.enterColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+	m.downColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+	m.disabledColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
+	//m.forcePaint = nil
+	if fn != nil {
+		fn()
 	}
-	m.forcePaint = time.AfterFunc(time.Second/16, func() {
-		m.defaultColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
-		m.enterColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
-		m.downColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
-		m.disabledColor.forcePaint(m.RoundedCorner, m.ClientRect(), m.alpha, m.radius)
-		m.forcePaint = nil
-		if fn != nil {
-			fn()
-		}
-	})
+	//})
 }
 
 func (m *TButton) SetOnPaint(fn lcl.TNotifyEvent) {
