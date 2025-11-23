@@ -396,18 +396,20 @@ func (m *TButton) SetText(value string) {
 func (m *TButton) AutoSizeWidth() {
 	if m.autoSize {
 		lcl.RunOnMainThreadAsync(func(id uint32) {
-			leftArea := int32(0)
-			if m.iconFavorite.Width() > 0 {
-				leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
-			}
-			rightArea := int32(0)
-			if m.iconClose.Width() > 0 {
-				rightArea = iconMargin + m.iconClose.Width() + iconMargin
-			}
-			textWidth := m.Canvas().TextWidthWithString(m.text)
-			width := textWidth + leftArea + rightArea + iconMargin*2
-			if m.Width() != width {
-				m.SetWidth(width)
+			if m.Canvas() != nil {
+				leftArea := int32(0)
+				if m.iconFavorite.Width() > 0 {
+					leftArea = iconMargin + m.iconFavorite.Width() + iconMargin
+				}
+				rightArea := int32(0)
+				if m.iconClose.Width() > 0 {
+					rightArea = iconMargin + m.iconClose.Width() + iconMargin
+				}
+				textWidth := m.Canvas().TextWidthWithString(m.text)
+				width := textWidth + leftArea + rightArea + iconMargin*2
+				if m.Width() != width {
+					m.SetWidth(width)
+				}
 			}
 		})
 	} else {
