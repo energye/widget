@@ -264,8 +264,6 @@ func (m *TTab) HideAllActivated() {
 	}
 }
 
-//func (m *TTab)
-
 // 删除指定 page
 func (m *TTab) RemovePage(removePage *TPage) {
 	removeIndex := -1 // 存放当前删除page的索引
@@ -330,19 +328,19 @@ func (m *TPage) Active() bool {
 func (m *TPage) SetActive(active bool) {
 	m.active = active
 	if active {
-		m.ICustomPanel.Show()
-		m.tabSheet.Show()
 		m.button.SetDefaultColor(m.activeColor, m.activeColor)
 		m.button.ForcePaint(func() {
 			m.button.Invalidate()
 		})
+		m.ICustomPanel.Show()
+		m.tabSheet.Show()
 	} else {
-		m.ICustomPanel.Hide()
-		m.tabSheet.Hide()
 		m.button.SetDefaultColor(m.defaultColor, m.defaultColor)
 		m.button.ForcePaint(func() {
 			m.button.Invalidate()
 		})
+		m.ICustomPanel.Hide()
+		m.tabSheet.Hide()
 	}
 }
 
