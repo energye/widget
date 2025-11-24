@@ -66,7 +66,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus := wg.NewButton(m)
 		cus.SetShowHint(true)
 		cus.RoundedCorner = cus.RoundedCorner.Exclude(wg.RcLeftBottom).Exclude(wg.RcRightBottom)
-		cus.SetText("上圆角")
+		cus.SetText("上圆角-禁用/启用")
 		cus.SetHint("上圆角上圆角")
 		cus.Font().SetSize(12)
 		cus.Font().SetColor(colors.Cl3DFace)
@@ -93,7 +93,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus.SetParent(box)
 
 		cus2 := wg.NewButton(m)
-		cus2.SetText("大圆角")
+		cus2.SetText("大圆角-渐变色")
 		cus2.SetBoundsRect(types.TRect{Left: 50, Top: 150, Right: 250, Bottom: 220})
 		var (
 			defaultStartColor = colors.RGBToColor(255, 100, 0)
@@ -124,11 +124,12 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus3.SetParent(box)
 
 		cus4 := wg.NewButton(m)
-		cus4.SetText("大大圆角")
+		cus4.SetText("大大圆角-半透明")
 		cus4.Font().SetColor(colors.ClWhite)
+		cus4.Font().SetSize(12)
 		cus4.SetBoundsRect(types.TRect{Left: 50, Top: 350, Right: 250, Bottom: 420})
 		cus4.SetRadius(35)
-		cus4.SetAlpha(255)
+		cus4.SetAlpha(125)
 		cus4.SetOnClick(click)
 		cus4.SetParent(box)
 
