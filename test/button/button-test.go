@@ -61,6 +61,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	{
 		click := func(sender lcl.IObject) {
 			fmt.Println(lcl.AsGraphicControl(sender).Caption())
+			m.SetCaption(time.Now().String())
 		}
 		cus := wg.NewButton(m)
 		cus.SetShowHint(true)

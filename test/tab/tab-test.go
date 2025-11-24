@@ -127,6 +127,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 	add.Font().SetColor(colors.ClWhite)
 	add.Font().SetStyle(types.NewSet(types.FsBold))
 	add.SetOnClick(func(sender lcl.IObject) {
+		m.SetCaption(RandMixString())
 		addPage(count)
 		count++
 	})

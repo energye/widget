@@ -23,12 +23,13 @@ type TButtonBorderDirections = types.TSet
 
 // TButtonColor 按钮颜色
 type TButtonColor struct {
-	start  colors.TColor     // 按钮起始渐变颜色
-	end    colors.TColor     // 按钮结束渐变颜色
-	Border TButtonBorder     // 按钮边框
-	img    lcl.ILazIntfImage // 缓存
-	bitMap lcl.IBitmap       // 缓存
-	type_  int32             // 按钮类型, 自定义, 区分类型
+	start    colors.TColor     // 按钮起始渐变颜色
+	end      colors.TColor     // 按钮结束渐变颜色
+	Border   TButtonBorder     // 按钮边框
+	img      lcl.ILazIntfImage // 缓存
+	bitMap   lcl.IBitmap       // 缓存
+	type_    int32             // 按钮类型, 自定义, 区分类型
+	canPaint bool              // 是否绘制
 }
 
 // 按钮边框
@@ -71,6 +72,7 @@ func (m *TButtonColor) SetBorderWidth(direction TButtonBorderDirection, width in
 	default:
 		m.Border.width = width
 	}
+	m.canPaint = true
 }
 
 // BorderWidth 根据指定的边框方向返回对应的边框宽度
@@ -110,6 +112,7 @@ func (m *TButtonColor) SetBorderColor(direction TButtonBorderDirection, color co
 	default:
 		m.Border.color = color
 	}
+	m.canPaint = true
 }
 
 // BorderColor 根据指定的边框方向返回对应的边框颜色
@@ -132,27 +135,7 @@ func (m *TButtonColor) BorderColor(direction TButtonBorderDirection) (color colo
 	return
 }
 
-// forcePaint 强制绘制按钮颜色
-// roundedCorners: 圆角设置
-// rect: 绘制区域矩形
-// alpha: 透明度值
-// radius: 圆角半径
-func (m *TButtonColor) forcePaint(roundedCorners TRoundedCorners, rect types.TRect, alpha byte, radius int32) {
-	if m.img.Width() != rect.Width() || m.img.Height() != rect.Height() {
-		m.img.SetSize(rect.Width(), rect.Height())
-	}
-	if m.bitMap.Width() != rect.Width() || m.bitMap.Height() != rect.Height() {
-		m.bitMap.SetSize(rect.Width(), rect.Height())
-	}
-	m.doPaint(roundedCorners, rect, alpha, radius)
-}
-
-// paint 绘制按钮颜色
-// roundedCorners: 圆角设置
-// rect: 绘制区域矩形
-// alpha: 透明度值
-// radius: 圆角半径
-func (m *TButtonColor) tryPaint(roundedCorners TRoundedCorners, rect types.TRect, alpha byte, radius int32) {
+func (m *TButtonColor) CanPaint(rect types.TRect) bool {
 	isPaint := false
 	if m.img.Width() != rect.Width() || m.img.Height() != rect.Height() {
 		m.img.SetSize(rect.Width(), rect.Height())
@@ -162,10 +145,19 @@ func (m *TButtonColor) tryPaint(roundedCorners TRoundedCorners, rect types.TRect
 		m.bitMap.SetSize(rect.Width(), rect.Height())
 		isPaint = true
 	}
+	return isPaint || m.canPaint
+}
 
-	if !isPaint {
+// paint 绘制按钮颜色
+// roundedCorners: 圆角设置
+// rect: 绘制区域矩形
+// alpha: 透明度值
+// radius: 圆角半径
+func (m *TButtonColor) tryPaint(roundedCorners TRoundedCorners, rect types.TRect, alpha byte, radius int32) {
+	if !m.CanPaint(rect) {
 		return
 	}
+	m.canPaint = false
 	m.doPaint(roundedCorners, rect, alpha, radius)
 }
 
@@ -263,6 +255,7 @@ func (m *TButtonColor) doPaint(roundedCorners TRoundedCorners, rect types.TRect,
 func (m *TButtonColor) SetColor(start, end colors.TColor) {
 	m.start = start
 	m.end = end
+	m.canPaint = true
 }
 
 // calculateRoundedAlpha 根据给定的圆角信息和像素位置，计算该点在按钮背景中的 alpha 值以及所属的圆角类型。

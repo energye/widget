@@ -171,8 +171,12 @@ func (m *TTab) ScrollRight() *TButton {
 }
 
 func (m *TTab) EnableScrollButton(value bool) {
-	m.scrollLeftBtn.SetVisible(value)
-	m.scrollRightBtn.SetVisible(value)
+	if m.scrollLeftBtn != nil {
+		m.scrollLeftBtn.SetVisible(value)
+	}
+	if m.scrollRightBtn != nil {
+		m.scrollRightBtn.SetVisible(value)
+	}
 }
 
 func (m *TTab) triggerScrollLoop(afterTime time.Duration, scrollLeftOrRight int32) {
@@ -223,8 +227,8 @@ func (m *TTab) scrollRight() {
 
 // RecalculatePosition 重新计算位置, 在隐藏/移除时使用
 func (m *TTab) RecalculatePosition() {
-	var widths int32 = m.scrollOffset
-	if m.scrollLeftBtn.Visible() {
+	widths := m.scrollOffset
+	if m.scrollLeftBtn != nil && m.scrollLeftBtn.Visible() {
 		widths += scrollBtnWidth + scrollBtnMargin
 	}
 	for _, page := range m.pages {
@@ -245,11 +249,11 @@ func (m *TTab) RecalculatePosition() {
 
 // 滚动导航按钮 位置调整
 func (m *TTab) scrollBtnPosition() {
-	if m.scrollLeftBtn.Visible() {
+	if m.scrollLeftBtn != nil && m.scrollLeftBtn.Visible() {
 		m.scrollLeftBtn.SetLeft(2)
 		m.scrollLeftBtn.BringToFront()
 	}
-	if m.scrollRightBtn.Visible() {
+	if m.scrollRightBtn != nil && m.scrollRightBtn.Visible() {
 		m.scrollRightBtn.SetLeft(m.Width() - scrollBtnWidth - 2)
 		m.scrollRightBtn.BringToFront()
 	}
@@ -336,19 +340,14 @@ func (m *TPage) SetActive(active bool) {
 	m.active = active
 	if active {
 		m.button.SetDefaultColor(m.activeColor, m.activeColor)
-		m.button.ForcePaint(func() {
-			m.button.Invalidate()
-		})
 		m.ICustomPanel.Show()
 		m.tabSheet.Show()
 	} else {
 		m.button.SetDefaultColor(m.defaultColor, m.defaultColor)
-		m.button.ForcePaint(func() {
-			m.button.Invalidate()
-		})
 		m.ICustomPanel.Hide()
 		m.tabSheet.Hide()
 	}
+	m.button.Invalidate()
 }
 
 // 隐藏自己, button 和 page 同时隐藏
