@@ -135,6 +135,9 @@ func (m *TButtonColor) BorderColor(direction TButtonBorderDirection) (color colo
 	return
 }
 
+// CanPaint 检查按钮颜色是否可以绘制
+// rect: 绘制区域的矩形尺寸
+// 返回值: 当尺寸发生变化或允许绘制时返回true，否则返回false
 func (m *TButtonColor) CanPaint(rect types.TRect) bool {
 	isPaint := false
 	if m.img.Width() != rect.Width() || m.img.Height() != rect.Height() {
