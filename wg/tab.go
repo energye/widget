@@ -106,7 +106,7 @@ func (m *TTab) NewPage() *TPage {
 	button := NewButton(m)
 	button.SetAutoSize(true)
 	button.SetShowHint(true)
-	button.SetText(defaultPrefix + strconv.Itoa(len(m.pages)))
+	button.SetCaption(defaultPrefix + strconv.Itoa(len(m.pages)))
 	button.Font().SetSize(9)
 	button.Font().SetColor(colors.Cl3DFace)
 	button.RoundedCorner = button.RoundedCorner.Exclude(RcLeftBottom).Exclude(RcRightBottom)
@@ -311,6 +311,13 @@ func (m *TPage) Remove() {
 	m.ICustomPanel.Free()
 	m.tabSheet.Free()
 	m.tab = nil
+}
+
+func (m *TPage) SetCaption(name string) {
+	m.button.SetCaption(name)
+	lcl.RunOnMainThreadAsync(func(id uint32) {
+		m.tab.RecalculatePosition()
+	})
 }
 
 func (m *TPage) SetActiveColor(color types.TColor) {
