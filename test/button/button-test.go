@@ -123,6 +123,20 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus3.SetOnClick(click)
 		cus3.SetParent(box)
 
+		cus41 := wg.NewButton(m)
+		cus41.SetText("红的-半透明")
+		cus41.Font().SetColor(colors.ClWhite)
+		cus41.Font().SetSize(12)
+		cus41.SetColor(colors.ClRed)
+		cusBtn := types.TRect{Left: 80, Top: 370}
+		cusBtn.SetWidth(200)
+		cusBtn.SetHeight(70)
+		cus41.SetBoundsRect(cusBtn)
+		cus41.SetRadius(35)
+		cus41.SetAlpha(125)
+		cus41.SetOnClick(click)
+		cus41.SetParent(box)
+
 		cus4 := wg.NewButton(m)
 		cus4.SetText("大大圆角-半透明")
 		cus4.Font().SetColor(colors.ClWhite)
