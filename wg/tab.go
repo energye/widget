@@ -31,6 +31,7 @@ type TTab struct {
 	scrollTimer       *time.Timer      // tab 滚动连续
 	triggerScrollStop bool             // 触发滚动是否停止
 	onChange          lcl.TNotifyEvent //
+	Margin            int32            // 两个 tab 之间的距离
 }
 
 type TPage struct {
@@ -227,7 +228,7 @@ func (m *TTab) scrollRight() {
 
 // RecalculatePosition 重新计算位置, 在隐藏/移除时使用
 func (m *TTab) RecalculatePosition() {
-	widths := m.scrollOffset
+	widths := m.scrollOffset + m.Margin
 	if m.scrollLeftBtn != nil && m.scrollLeftBtn.Visible() {
 		widths += scrollBtnWidth + scrollBtnMargin
 	}
@@ -239,7 +240,7 @@ func (m *TTab) RecalculatePosition() {
 			br.Left = widths
 			br.SetWidth(width)
 			page.button.SetBoundsRect(br)
-			widths += br.Width()
+			widths += br.Width() + m.Margin
 		}
 	}
 	m.totalTabWidth = widths

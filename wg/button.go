@@ -22,13 +22,13 @@ type TRoundedCorners = types.TSet
 
 const iconMargin = 5
 
-type buttonState = int32
+type TButtonState = int32
 
 const (
-	bsDefault  buttonState = iota // 默认状态
-	bsEnter                       // 移入状态
-	bsDown                        // 按下状态
-	bsDisabled                    // 禁用状态
+	BsDefault  TButtonState = iota // 默认状态
+	BsEnter                        // 移入状态
+	BsDown                         // 按下状态
+	BsDisabled                     // 禁用状态
 )
 
 var (
@@ -62,7 +62,7 @@ type TButton struct {
 	onMouseDown  lcl.TMouseEvent
 	onMouseUp    lcl.TMouseEvent
 	// 默认颜色, 移入颜色, 按下颜色, 禁用颜色
-	buttonState   buttonState
+	buttonState   TButtonState
 	defaultColor  *TButtonColor
 	enterColor    *TButtonColor
 	downColor     *TButtonColor
@@ -85,10 +85,10 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.alpha = 255
 	m.radius = 0
 	m.ICustomGraphicControl.SetOnPaint(m.paint)
-	m.ICustomGraphicControl.SetOnMouseEnter(m.enter) // 进入
-	m.ICustomGraphicControl.SetOnMouseLeave(m.leave) // 移出
-	m.ICustomGraphicControl.SetOnMouseDown(m.down)   // 按下
-	m.ICustomGraphicControl.SetOnMouseUp(m.up)       // 抬起
+	m.ICustomGraphicControl.SetOnMouseEnter(m.Enter) // 进入
+	m.ICustomGraphicControl.SetOnMouseLeave(m.Leave) // 移出
+	m.ICustomGraphicControl.SetOnMouseDown(m.Down)   // 按下
+	m.ICustomGraphicControl.SetOnMouseUp(m.Up)       // 抬起
 	m.ICustomGraphicControl.SetOnMouseMove(m.move)
 	m.RoundedCorner = types.NewSet(RcLeftTop, RcRightTop, RcLeftBottom, RcRightBottom)
 	m.iconFavorite = lcl.NewPicture()
@@ -101,13 +101,13 @@ func NewButton(owner lcl.IComponent) *TButton {
 	m.icon.SetOnChange(m.iconChange)
 	// 创建按钮颜色对象
 	m.defaultColor = NewButtonColor()
-	m.defaultColor.type_ = bsDefault
+	m.defaultColor.type_ = BsDefault
 	m.enterColor = NewButtonColor()
-	m.enterColor.type_ = bsEnter
+	m.enterColor.type_ = BsEnter
 	m.downColor = NewButtonColor()
-	m.downColor.type_ = bsDown
+	m.downColor.type_ = BsDown
 	m.disabledColor = NewButtonColor()
-	m.disabledColor.type_ = bsDisabled
+	m.disabledColor.type_ = BsDisabled
 	// 设置按钮颜色
 	m.SetColor(defaultButtonColor)
 	// 设置禁用颜色
@@ -192,42 +192,42 @@ func (m *TButton) HideHint() {
 	}
 }
 
-func (m *TButton) enter(sender lcl.IObject) {
+func (m *TButton) Enter(sender lcl.IObject) {
 	if m.isDisable || !m.IsValid() {
 		return
 	}
-	m.buttonState = bsEnter
+	m.buttonState = BsEnter
 	m.Invalidate()
 	if m.onMouseEnter != nil {
 		m.onMouseEnter(sender)
 	}
 }
 
-func (m *TButton) leave(sender lcl.IObject) {
+func (m *TButton) Leave(sender lcl.IObject) {
 	if m.isDisable || !m.IsValid() {
 		return
 	}
 	m.isEnterClose = false
-	m.buttonState = bsDefault
+	m.buttonState = BsDefault
 	m.Invalidate()
 	if m.onMouseLeave != nil {
 		m.onMouseLeave(sender)
 	}
 }
 
-func (m *TButton) down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+func (m *TButton) Down(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
 	if m.isDisable || !m.IsValid() {
 		return
 	}
 	m.HideHint()
-	m.buttonState = bsDown
+	m.buttonState = BsDown
 	m.Invalidate()
 	if m.onMouseDown != nil {
 		m.onMouseDown(sender, button, shift, X, Y)
 	}
 }
 
-func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
+func (m *TButton) Up(sender lcl.IObject, button types.TMouseButton, shift types.TShiftState, X int32, Y int32) {
 	if m.isDisable || !m.IsValid() {
 		return
 	}
@@ -236,7 +236,7 @@ func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.
 			m.onCloseClick(sender)
 		}
 	} else {
-		m.buttonState = bsEnter
+		m.buttonState = BsEnter
 		m.Invalidate()
 		if m.onMouseUp != nil {
 			m.onMouseUp(sender, button, shift, X, Y)
@@ -247,9 +247,9 @@ func (m *TButton) up(sender lcl.IObject, button types.TMouseButton, shift types.
 func (m *TButton) SetDisable(disable bool) {
 	m.isDisable = disable
 	if m.isDisable {
-		m.buttonState = bsDisabled
+		m.buttonState = BsDisabled
 	} else {
-		m.buttonState = bsDefault
+		m.buttonState = BsDefault
 	}
 	lcl.RunOnMainThreadAsync(func(id uint32) {
 		m.Invalidate()
@@ -297,13 +297,13 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	text := m.text
 	var color *TButtonColor
 	switch m.buttonState {
-	case bsDefault:
+	case BsDefault:
 		color = m.defaultColor
-	case bsEnter:
+	case BsEnter:
 		color = m.enterColor
-	case bsDown:
+	case BsDown:
 		color = m.downColor
-	case bsDisabled:
+	case BsDisabled:
 		color = m.disabledColor
 	}
 	if color == nil {
