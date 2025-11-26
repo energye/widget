@@ -41,13 +41,14 @@ var (
 // 当大小改变, 颜色改变 会重新绘制
 type TButton struct {
 	lcl.ICustomGraphicControl
-	isDisable                bool            // 是否禁用
-	alpha                    byte            // 透明度 0 ~ 255
-	radius                   int32           // 圆角度
-	autoSize                 bool            // 自动大小
-	text                     string          // 文本
-	RoundedCorner            TRoundedCorners // 按钮圆角方向，默认四角
-	TextOffSetX, TextOffSetY int32           // 文本显示偏移位置
+	isDisable                          bool            // 是否禁用
+	alpha                              byte            // 透明度 0 ~ 255
+	radius                             int32           // 圆角度
+	autoSize                           bool            // 自动大小
+	text                               string          // 文本
+	RoundedCorner                      TRoundedCorners // 按钮圆角方向，默认四角
+	TextOffSetX, TextOffSetY           int32           // 文本显示偏移位置
+	IconCloseOffSetX, IconCloseOffSetY int32           // 关闭按钮偏移位置
 	// 图标
 	iconFavorite       lcl.IPicture // 按钮前置图标, 靠左
 	iconClose          lcl.IPicture // 按钮关闭图标, 靠右
@@ -220,10 +221,12 @@ func (m *TButton) Down(sender lcl.IObject, button types.TMouseButton, shift type
 		return
 	}
 	m.HideHint()
-	m.buttonState = BsDown
-	m.Invalidate()
-	if m.onMouseDown != nil {
-		m.onMouseDown(sender, button, shift, X, Y)
+	if !m.isCloseArea(X, Y) {
+		m.buttonState = BsDown
+		m.Invalidate()
+		if m.onMouseDown != nil {
+			m.onMouseDown(sender, button, shift, X, Y)
+		}
 	}
 }
 
@@ -231,6 +234,7 @@ func (m *TButton) Up(sender lcl.IObject, button types.TMouseButton, shift types.
 	if m.isDisable || !m.IsValid() {
 		return
 	}
+	m.HideHint()
 	if m.isCloseArea(X, Y) {
 		if m.onCloseClick != nil {
 			m.onCloseClick(sender)
@@ -436,6 +440,10 @@ func (m *TButton) SetIconFavoriteFormBytes(pngData []byte) {
 	if !m.IsValid() {
 		return
 	}
+	if pngData == nil {
+		m.iconFavorite.Clear()
+		return
+	}
 	mem := lcl.NewMemoryStream()
 	defer mem.Free()
 	lcl.StreamHelper.WriteBuffer(mem, pngData)
@@ -452,6 +460,10 @@ func (m *TButton) SetIcon(filePath string) {
 
 func (m *TButton) SetIconFormBytes(pngData []byte) {
 	if !m.IsValid() {
+		return
+	}
+	if pngData == nil {
+		m.icon.Clear()
 		return
 	}
 	mem := lcl.NewMemoryStream()
@@ -483,15 +495,24 @@ func (m *TButton) SetIconCloseFormBytes(pngData []byte) {
 	if !m.IsValid() {
 		return
 	}
+	if pngData == nil {
+		m.iconClose.Clear()
+		return
+	}
 	mem := lcl.NewMemoryStream()
 	defer mem.Free()
 	lcl.StreamHelper.WriteBuffer(mem, pngData)
 	mem.SetPosition(0)
 	m.iconClose.LoadFromStream(mem)
+
 }
 
 func (m *TButton) SetIconCloseHighlightFormBytes(pngData []byte) {
 	if !m.IsValid() {
+		return
+	}
+	if pngData == nil {
+		m.iconCloseHighlight.Clear()
 		return
 	}
 	mem := lcl.NewMemoryStream()
