@@ -631,7 +631,6 @@ func (m *TButton) SetBorderWidth(direction TButtonBorderDirection, width int32) 
 }
 
 // SetBorderDirections 设置按钮的所有状态边框样式
-// 参数:
 //
 //	borders: TButtonBorders类型，指定按钮的边框样式
 //
