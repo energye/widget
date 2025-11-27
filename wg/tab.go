@@ -105,8 +105,8 @@ func (m *TTab) NewPage() *TPage {
 	page.activeColor = activeColor
 	page.defaultColor = defaultColor
 	button := NewButton(m)
-	button.SetAutoSize(true)
-	button.SetShowHint(true)
+	//button.SetAutoSize(true)
+	//button.SetShowHint(true)
 	button.SetCaption(defaultPrefix + strconv.Itoa(len(m.pages)))
 	button.Font().SetSize(9)
 	button.Font().SetColor(colors.Cl3DFace)

@@ -86,6 +86,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		btn := page.Button()
 		btn.SetBorderWidth(wg.BbdBottom, 2)
 		text := RandMixString()
+		btn.SetAutoSize(true)
 		btn.SetText(text)
 		page.SetColor(colors.RGBToColor(byte(rand.Intn(256)), byte(rand.Intn(256)), byte(rand.Intn(256))))
 		testPanel := lcl.NewPanel(page)

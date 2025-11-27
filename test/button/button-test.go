@@ -197,6 +197,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		{
 			cus := wg.NewButton(m)
 			cus.SetShowHint(true)
+			cus.SetAutoSize(true)
 			cus.SetText("自动宽1")
 			cus.SetHint("自动宽1")
 			cus.Font().SetSize(12)
@@ -240,6 +241,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		}
 		{
 			cus7 := wg.NewButton(m)
+			cus7.SetAutoSize(true)
 			cus7.SetText("自动宽2")
 			cus7.Font().SetColor(colors.ClWhite)
 			//cus7.SetStartColor(colors.RGBToColor(41, 42, 43))

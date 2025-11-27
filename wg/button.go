@@ -425,6 +425,10 @@ func (m *TButton) Text() string {
 	return m.text
 }
 
+// SetAutoSize 设置按钮的自动大小属性
+//
+//	当启用自动大小时，按钮会根据其内容自动调整大小
+//	Note: 当前需要在第一次设置文本之前设置生效
 func (m *TButton) SetAutoSize(v bool) {
 	m.autoSize = v
 }
