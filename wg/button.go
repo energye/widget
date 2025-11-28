@@ -1,3 +1,16 @@
+// Copyright © yanghy. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and limitations under the License.
+
 package wg
 
 import (
@@ -9,6 +22,16 @@ import (
 	"time"
 )
 
+// TextAlign 行间距, 多行文本
+type TextAlign int8
+
+const (
+	TextAlignCenter TextAlign = iota // 居中对齐（默认）
+	TextAlignRight                   // 右对齐
+	TextAlignLeft                    // 左对齐（可选扩展）
+)
+
+// RoundedCorner 按钮圆角方向，默认四角
 type RoundedCorner = int32
 
 const (
@@ -18,10 +41,13 @@ const (
 	RcRightBottom
 )
 
+// TRoundedCorners 按钮圆角方向，默认四角
 type TRoundedCorners = types.TSet
 
+// 图标默认边距
 const iconMargin = 5
 
+// TButtonState 按钮当着状态
 type TButtonState = int32
 
 const (
@@ -49,6 +75,8 @@ type TButton struct {
 	RoundedCorner                      TRoundedCorners // 按钮圆角方向，默认四角
 	TextOffSetX, TextOffSetY           int32           // 文本显示偏移位置
 	IconCloseOffSetX, IconCloseOffSetY int32           // 关闭按钮偏移位置
+	TextAlign                          TextAlign       // 该校对齐
+	TextLineSpacing                    int32           // 行间距 px
 	// 图标
 	iconFavorite       lcl.IPicture // 按钮前置图标, 靠左
 	iconClose          lcl.IPicture // 按钮关闭图标, 靠右
@@ -323,13 +351,13 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	brush.SetStyle(types.BsClear)
 
 	textMargin := int32(0) // 文本与图标的间距
-	// 计算左右图标占用的空间
+	// 计算左图标占用的空间
 	leftArea := int32(0)
 	if m.iconFavorite.Width() > 0 {
 		leftArea = iconMargin + m.iconFavorite.Width() + iconMargin // 左边距10 + 图标宽度 + 图标与文本间距10
 		textMargin += iconMargin
 	}
-
+	// 计算右图标占用的空间
 	rightArea := int32(0)
 	if m.iconClose.Width() > 0 {
 		rightArea = iconMargin + m.iconClose.Width() + iconMargin // 右边距10 + 图标宽度 + 图标与文本间距10
@@ -365,23 +393,29 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	// 3. 计算多行文本的整体位置（保持垂直居中）
 	totalTextHeight := int32(len(lines)) * lineHeight // 总文本高度（无行间距）
 	// 可选：添加行间距（如需调整，取消下面注释，lineSpacing为自定义行间距，如2）
-	// lineSpacing := int32(2)
-	// totalTextHeight = totalTextHeight + (int32(len(lines))-1)*lineSpacing
+	totalTextHeight = totalTextHeight + (int32(len(lines))-1)*m.TextLineSpacing
 
 	// 文本区域起始Y坐标（垂直居中）
 	startY := rect.Top + m.TextOffSetY + (rect.Height()-totalTextHeight)/2
-
+	textBaseX := rect.Left + m.TextOffSetX + leftArea + textMargin
 	// 4. 逐行绘制文本
 	for i, line := range lines {
-		// 计算当前行的尺寸
 		lineSize := canvas.TextExtentWithUnicodestring(line)
-		// 计算当前行的X坐标（水平居中，基于可用宽度）
-		textX := rect.Left + m.TextOffSetX + leftArea + (availWidth-lineSize.Cx)/2 + textMargin
+		var textX int32
+		switch m.TextAlign {
+		case TextAlignRight:
+			textX = textBaseX + (availWidth - lineSize.Cx)
+		case TextAlignLeft:
+			textX = textBaseX
+		default:
+			textX = textBaseX + (availWidth-lineSize.Cx)/2
+		}
 		// 计算当前行的Y坐标（垂直居中，叠加行索引）
 		// 可选：带行间距时，替换为 startY + int32(i)*(lineHeight + lineSpacing)
-		textY := startY + int32(i)*lineHeight + (lineHeight-lineSize.Cy)/2 // 行内垂直居中
+		//textY := startY + int32(i)*lineHeight + (lineHeight-lineSize.Cy)/2
+		textY := startY + int32(i)*(lineHeight+m.TextLineSpacing) + (lineHeight-lineSize.Cy)/2
 
-		// 绘制主文字
+		// 绘制文本
 		canvas.TextOutWithIntX2Unicodestring(textX, textY, line)
 	}
 

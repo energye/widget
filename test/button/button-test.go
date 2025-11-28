@@ -302,5 +302,52 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 			}()
 		}
 	}
+	{
+		textAlignLeft := wg.NewButton(m)
+		textAlignLeftRect := types.TRect{Left: 255, Top: 150}
+		textAlignLeftRect.SetWidth(150)
+		textAlignLeftRect.SetHeight(80)
+		textAlignLeft.SetBoundsRect(textAlignLeftRect)
+		textAlignLeft.Font().SetColor(colors.ClWhite)
+		textAlignLeft.Font().SetSize(10)
+		textAlignLeft.TextAlign = wg.TextAlignLeft
+		textAlignLeft.TextLineSpacing = 8
+		textAlignLeft.SetRadius(10)
+		textAlignLeft.SetAlpha(255)
+		textAlignLeft.SetText("左对齐\n换行文本换行文本\n行间距8px, 第三行")
+		textAlignLeft.SetIconFavorite(filepath.Join(examplePath, "resources", "icon.png"))
+		textAlignLeft.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
+		textAlignLeft.SetParent(box)
+
+		textAlignRight := wg.NewButton(m)
+		textAlignRightRect := types.TRect{Left: 455, Top: 150}
+		textAlignRightRect.SetWidth(150)
+		textAlignRightRect.SetHeight(40)
+		textAlignRight.SetBoundsRect(textAlignRightRect)
+		textAlignRight.Font().SetColor(colors.ClWhite)
+		textAlignRight.Font().SetSize(10)
+		textAlignRight.TextAlign = wg.TextAlignRight
+		textAlignRight.TextOffSetX = -5
+		textAlignRight.SetRadius(10)
+		textAlignRight.SetAlpha(255)
+		textAlignRight.SetText("右对齐\n\n换行文本换行文本")
+		textAlignRight.SetIconFavorite(filepath.Join(examplePath, "resources", "icon.png"))
+		textAlignRight.SetIconClose(filepath.Join(examplePath, "resources", "close.png"))
+		textAlignRight.SetParent(box)
+
+		textAlignRight2 := wg.NewButton(m)
+		textAlignRight2Rect := types.TRect{Left: 455, Top: 200}
+		textAlignRight2Rect.SetWidth(150)
+		textAlignRight2Rect.SetHeight(40)
+		textAlignRight2.SetBoundsRect(textAlignRight2Rect)
+		textAlignRight2.Font().SetColor(colors.ClWhite)
+		textAlignRight2.Font().SetSize(10)
+		textAlignRight2.TextAlign = wg.TextAlignRight
+		textAlignRight2.TextOffSetX = -5
+		textAlignRight2.SetRadius(0)
+		textAlignRight2.SetAlpha(255)
+		textAlignRight2.SetText("右对齐\n\n换行文本换行文本")
+		textAlignRight2.SetParent(box)
+	}
 
 }
