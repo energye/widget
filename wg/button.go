@@ -372,7 +372,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 
 	lines := strings.Split(text, "\n")
 
-	// 2. 逐行处理：截断每行超长文本（保持原截断逻辑）
+	// 逐行处理：截断每行超长文本（保持原截断逻辑）
 	var processedLines []string
 	var lineHeight int32 // 单行文本高度（默认取第一行高度，假设字体统一）
 	// 获取单行文本高度（以第一行为例）
@@ -390,32 +390,26 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	}
 	lines = processedLines
 
-	// 3. 计算多行文本的整体位置（保持垂直居中）
+	// 计算多行文本的整体位置（保持垂直居中）
 	totalTextHeight := int32(len(lines)) * lineHeight // 总文本高度（无行间距）
-	// 可选：添加行间距（如需调整，取消下面注释，lineSpacing为自定义行间距，如2）
+	// 添加行间距
 	totalTextHeight = totalTextHeight + (int32(len(lines))-1)*m.TextLineSpacing
 
 	// 文本区域起始Y坐标（垂直居中）
 	startY := rect.Top + m.TextOffSetY + (rect.Height()-totalTextHeight)/2
-	textBaseX := rect.Left + m.TextOffSetX + leftArea + textMargin
-	// 4. 逐行绘制文本
+	textBaseX := rect.Left + m.TextOffSetX + textMargin
 	for i, line := range lines {
 		lineSize := canvas.TextExtentWithUnicodestring(line)
 		var textX int32
 		switch m.TextAlign {
 		case TextAlignRight:
-			textX = textBaseX + (availWidth - lineSize.Cx)
+			textX = textBaseX + leftArea + (availWidth - lineSize.Cx)
 		case TextAlignLeft:
-			textX = textBaseX
+			textX = textBaseX + leftArea
 		default:
-			textX = textBaseX + (availWidth-lineSize.Cx)/2
+			textX = textBaseX + (rect.Width()-lineSize.Cx)/2
 		}
-		// 计算当前行的Y坐标（垂直居中，叠加行索引）
-		// 可选：带行间距时，替换为 startY + int32(i)*(lineHeight + lineSpacing)
-		//textY := startY + int32(i)*lineHeight + (lineHeight-lineSize.Cy)/2
 		textY := startY + int32(i)*(lineHeight+m.TextLineSpacing) + (lineHeight-lineSize.Cy)/2
-
-		// 绘制文本
 		canvas.TextOutWithIntX2Unicodestring(textX, textY, line)
 	}
 
