@@ -341,23 +341,49 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	if availWidth < 0 {
 		availWidth = 0
 	}
-	// 截断文本
-	if len(text) > 0 {
-		text = truncateText(canvas, text, availWidth)
+
+	lines := strings.Split(text, "\n")
+
+	// 2. 逐行处理：截断每行超长文本（保持原截断逻辑）
+	var processedLines []string
+	var lineHeight int32 // 单行文本高度（默认取第一行高度，假设字体统一）
+	// 获取单行文本高度（以第一行为例）
+	tempSize := canvas.TextExtentWithUnicodestring(lines[0])
+	lineHeight = tempSize.Cy
+
+	// 逐行截断超长文本
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		// 沿用原截断逻辑：确保每行不超过可用宽度
+		truncatedLine := truncateText(canvas, line, availWidth)
+		processedLines = append(processedLines, truncatedLine)
 	}
+	lines = processedLines
 
-	// 计算文字位置
-	textSize := canvas.TextExtentWithUnicodestring(text)
-	textX := rect.Left + m.TextOffSetX + (rect.Width()-textSize.Cx)/2 + textMargin
-	textY := rect.Top + m.TextOffSetY + (rect.Height()-textSize.Cy)/2
+	// 3. 计算多行文本的整体位置（保持垂直居中）
+	totalTextHeight := int32(len(lines)) * lineHeight // 总文本高度（无行间距）
+	// 可选：添加行间距（如需调整，取消下面注释，lineSpacing为自定义行间距，如2）
+	// lineSpacing := int32(2)
+	// totalTextHeight = totalTextHeight + (int32(len(lines))-1)*lineSpacing
 
-	// 绘制文字阴影（增强可读性）
-	//canvas.FontToFont().SetColor(colors.ClBlack)
-	//canvas.TextOutWithIntX2Unicodestring(textX+1, textY+1, text)
+	// 文本区域起始Y坐标（垂直居中）
+	startY := rect.Top + m.TextOffSetY + (rect.Height()-totalTextHeight)/2
 
-	// 绘制主文字
-	//canvas.FontToFont().SetColor(colors.ClWhite)
-	canvas.TextOutWithIntX2Unicodestring(textX, textY, text)
+	// 4. 逐行绘制文本
+	for i, line := range lines {
+		// 计算当前行的尺寸
+		lineSize := canvas.TextExtentWithUnicodestring(line)
+		// 计算当前行的X坐标（水平居中，基于可用宽度）
+		textX := rect.Left + m.TextOffSetX + leftArea + (availWidth-lineSize.Cx)/2 + textMargin
+		// 计算当前行的Y坐标（垂直居中，叠加行索引）
+		// 可选：带行间距时，替换为 startY + int32(i)*(lineHeight + lineSpacing)
+		textY := startY + int32(i)*lineHeight + (lineHeight-lineSize.Cy)/2 // 行内垂直居中
+
+		// 绘制主文字
+		canvas.TextOutWithIntX2Unicodestring(textX, textY, line)
+	}
 
 	// 左: 绘制图标 favorite
 	favY := rect.Height()/2 - m.iconFavorite.Height()/2

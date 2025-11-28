@@ -93,7 +93,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus.SetParent(box)
 
 		cus2 := wg.NewButton(m)
-		cus2.SetText("大圆角-渐变色")
+		cus2.SetText("大圆角-渐变色有点长\n\n换行文本换行文本")
 		cus2.SetBoundsRect(types.TRect{Left: 50, Top: 150, Right: 250, Bottom: 220})
 		var (
 			defaultStartColor = colors.RGBToColor(255, 100, 0)
@@ -104,6 +104,7 @@ func (m *TMainForm) FormCreate(sender lcl.IObject) {
 		cus2.SetBorderColor(wg.BbdNone, colors.ClRed)
 		cus2.SetBorderWidth(wg.BbdNone, 1)
 		cus2.Font().SetColor(colors.ClWhite)
+		cus2.Font().SetSize(16)
 		cus2.SetDefaultColor(defaultStartColor, defaultEndColor)
 		cus2.SetEnterColor(wg.DarkenColor(defaultStartColor, 0.1), wg.DarkenColor(defaultEndColor, 0.1))
 		cus2.SetDownColor(wg.DarkenColor(defaultStartColor, 0.2), wg.DarkenColor(defaultEndColor, 0.2))
