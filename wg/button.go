@@ -372,10 +372,10 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 
 	lines := strings.Split(text, "\n")
 
-	// 逐行处理：截断每行超长文本（保持原截断逻辑）
+	// 逐行处理：截断每行超长文本
 	var processedLines []string
 	var lineHeight int32 // 单行文本高度（默认取第一行高度，假设字体统一）
-	// 获取单行文本高度（以第一行为例）
+	// 获取单行文本高度
 	tempSize := canvas.TextExtentWithUnicodestring(lines[0])
 	lineHeight = tempSize.Cy
 
@@ -384,7 +384,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 		if len(line) == 0 {
 			continue
 		}
-		// 沿用原截断逻辑：确保每行不超过可用宽度
+		// 截断 确保每行不超过可用宽度
 		truncatedLine := truncateText(canvas, line, availWidth)
 		processedLines = append(processedLines, truncatedLine)
 	}
@@ -585,7 +585,11 @@ func (m *TButton) paint(sender lcl.IObject) {
 	if !m.IsValid() {
 		return
 	}
-	m.drawRoundedGradientButton(m.Canvas(), m.ClientRect())
+	canvas := m.Canvas()
+	if canvas == nil || !canvas.IsValid() {
+		return
+	}
+	m.drawRoundedGradientButton(canvas, m.ClientRect())
 	if m.onPaint != nil {
 		m.onPaint(sender)
 	}
@@ -744,11 +748,11 @@ func truncateText(canvas lcl.ICanvas, text string, maxWidth int32) string {
 		return ""
 	}
 	ellipsis := "..."
-	ellipsisWidth := canvas.TextWidthWithUnicodestring(ellipsis)
+	ellipsisWidth := canvas.GetTextWidthWithString(ellipsis)
 	if ellipsisWidth > maxWidth {
 		return ""
 	}
-	textWidth := canvas.TextWidthWithUnicodestring(text)
+	textWidth := canvas.GetTextWidthWithString(text)
 	if textWidth <= maxWidth {
 		return text
 	}
@@ -758,7 +762,7 @@ func truncateText(canvas lcl.ICanvas, text string, maxWidth int32) string {
 	for left < right {
 		mid := (left + right) / 2
 		truncated := string(runes[:mid]) + ellipsis
-		if canvas.TextWidthWithUnicodestring(truncated) <= maxWidth {
+		if canvas.GetTextWidthWithString(truncated) <= maxWidth {
 			left = mid + 1
 		} else {
 			right = mid
