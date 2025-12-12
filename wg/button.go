@@ -96,7 +96,6 @@ type TButton struct {
 	enterColor    *TButtonColor
 	downColor     *TButtonColor
 	disabledColor *TButtonColor
-	//forcePaint    *time.Timer
 	// 提示
 	closeHintTimer *time.Timer
 	closeHint      lcl.IHintWindow
@@ -172,8 +171,10 @@ func NewButton(owner lcl.IComponent) *TButton {
 		m.iconClose.Free()
 		m.iconCloseHighlight.Free()
 		m.icon.Free()
-		//m.imgPool.Free()
-		//m.imgBitmapPool.Free()
+		m.defaultColor.Free()
+		m.enterColor.Free()
+		m.downColor.Free()
+		m.disabledColor.Free()
 	})
 	return m
 }

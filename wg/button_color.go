@@ -56,6 +56,15 @@ func NewButtonColor() *TButtonColor {
 	return m
 }
 
+func (m *TButtonColor) Free() {
+	if m.img != nil && m.img.IsValid() {
+		m.img.Free()
+	}
+	if m.bitMap != nil && m.bitMap.IsValid() {
+		m.bitMap.Free()
+	}
+}
+
 // SetBorderWidth 设置按钮指定方向的边框宽度
 // direction: 边框方向，指定要设置哪一边的边框宽度
 // width: 边框宽度值，单位为像素

@@ -272,16 +272,24 @@ func (m *TTab) HideAllActivated() {
 // 删除指定 page
 func (m *TTab) RemovePage(removePage *TPage) {
 	removeIndex := -1 // 存放当前删除page的索引
+	var (
+		newPages []*TPage // 替换为实际元素类型
+		found    bool
+	)
 	for i, page := range m.pages {
 		if page == removePage {
 			removeIndex = i
-			m.pages = append(m.pages[:i], m.pages[i+1:]...)
+			newPages = make([]*TPage, 0, len(m.pages)-1)
+			newPages = append(newPages, m.pages[:i]...)
+			newPages = append(newPages, m.pages[i+1:]...)
+			m.pages = newPages //append(m.pages[:i], m.pages[i+1:]...)
+			found = true
 			break
 		}
 	}
 	// 重新计算 button 位置
 	m.RecalculatePosition()
-	if removePage.active {
+	if removePage.active && found {
 		// 根据删除索引获取要显示的 page
 		var showPage *TPage
 		if removeIndex != -1 && removeIndex < len(m.pages) {
@@ -290,8 +298,11 @@ func (m *TTab) RemovePage(removePage *TPage) {
 			showPage = m.pages[0] // 显示第一个 page
 		}
 		if showPage != nil {
-			m.HideAllActivated()
-			showPage.SetActive(true)
+			lcl.RunOnMainThreadAsync(func(id uint32) {
+				if showPage.IsValid() {
+					showPage.SetActive(true)
+				}
+			})
 		}
 	}
 	m.deleting = false
@@ -299,6 +310,12 @@ func (m *TTab) RemovePage(removePage *TPage) {
 
 func (m *TTab) Pages() []*TPage {
 	return m.pages
+}
+
+func (m *TPage) Free() {
+	m.button.Free()
+	m.ICustomPanel.Free()
+	m.tabSheet.Free()
 }
 
 // 删除掉自己
@@ -312,9 +329,7 @@ func (m *TPage) Remove() {
 	// 在page里删除自己
 	m.tab.RemovePage(m)
 	// 最后释放掉
-	m.button.Free()
-	m.ICustomPanel.Free()
-	m.tabSheet.Free()
+	m.Free()
 	m.tab = nil
 }
 
