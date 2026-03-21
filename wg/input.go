@@ -55,7 +55,7 @@ func (m *TInput) drawText(canvas lcl.ICanvas) {
 	font.SetColor(m.TextColor)
 	//brush := canvas.BrushToBrush()
 	//brush.SetColor(m.BackgroundColor)
-	canvas.TextOutWithIntX2Unicodestring(clientRect.Left, clientRect.Top, m.Text)
+	canvas.TextOutWithIntX2Str(clientRect.Left, clientRect.Top, m.Text)
 
 }
 

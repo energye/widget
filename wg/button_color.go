@@ -49,7 +49,7 @@ type TButtonBorder struct {
 
 func NewButtonColor() *TButtonColor {
 	m := &TButtonColor{
-		img:    lcl.NewLazIntfImageWithIntX2RawImageQueryFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha)),
+		img:    lcl.NewLazIntfImageWithIntX2RIQFlags(0, 0, types.NewSet(types.RiqfRGB, types.RiqfAlpha)),
 		bitMap: lcl.NewBitmap(),
 	}
 	m.bitMap.SetPixelFormat(types.Pf32bit)

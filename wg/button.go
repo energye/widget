@@ -207,7 +207,7 @@ func (m *TButton) ShowHint(text string) {
 			hintRect.Top = cursorPos.Y + 15
 			hintRect.SetWidth(w)
 			hintRect.SetHeight(h)
-			m.closeHint.ActivateHintWithRectString(hintRect, text)
+			m.closeHint.ActivateHintWithRectStr(hintRect, text)
 		})
 	})
 }
@@ -377,7 +377,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	var processedLines []string
 	var lineHeight int32 // 单行文本高度（默认取第一行高度，假设字体统一）
 	// 获取单行文本高度
-	tempSize := canvas.TextExtentWithUnicodestring(lines[0])
+	tempSize := canvas.TextExtentWithStr(lines[0])
 	lineHeight = tempSize.Cy
 
 	// 逐行截断超长文本
@@ -400,7 +400,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 	startY := rect.Top + m.TextOffSetY + (rect.Height()-totalTextHeight)/2
 	textBaseX := rect.Left + m.TextOffSetX + textMargin
 	for i, line := range lines {
-		lineSize := canvas.TextExtentWithUnicodestring(line)
+		lineSize := canvas.TextExtentWithStr(line)
 		var textX int32
 		switch m.TextAlign {
 		case TextAlignRight:
@@ -411,7 +411,7 @@ func (m *TButton) drawRoundedGradientButton(canvas lcl.ICanvas, rect types.TRect
 			textX = textBaseX + (rect.Width()-lineSize.Cx)/2
 		}
 		textY := startY + int32(i)*(lineHeight+m.TextLineSpacing) + (lineHeight-lineSize.Cy)/2
-		canvas.TextOutWithIntX2Unicodestring(textX, textY, line)
+		canvas.TextOutWithIntX2Str(textX, textY, line)
 	}
 
 	// 左: 绘制图标 favorite
@@ -464,7 +464,7 @@ func (m *TButton) AutoSizeWidth() {
 				if m.iconClose.Width() > 0 {
 					rightArea = iconMargin + m.iconClose.Width() + iconMargin
 				}
-				textWidth := m.Canvas().TextWidthWithString(m.text)
+				textWidth := m.Canvas().TextWidthWithStr(m.text)
 				width := textWidth + leftArea + rightArea + iconMargin*2
 				if m.Width() != width {
 					m.SetWidth(width)
@@ -749,11 +749,11 @@ func truncateText(canvas lcl.ICanvas, text string, maxWidth int32) string {
 		return ""
 	}
 	ellipsis := "..."
-	ellipsisWidth := canvas.GetTextWidthWithString(ellipsis)
+	ellipsisWidth := canvas.GetTextWidth(ellipsis)
 	if ellipsisWidth > maxWidth {
 		return ""
 	}
-	textWidth := canvas.GetTextWidthWithString(text)
+	textWidth := canvas.GetTextWidth(text)
 	if textWidth <= maxWidth {
 		return text
 	}
@@ -763,7 +763,7 @@ func truncateText(canvas lcl.ICanvas, text string, maxWidth int32) string {
 	for left < right {
 		mid := (left + right) / 2
 		truncated := string(runes[:mid]) + ellipsis
-		if canvas.GetTextWidthWithString(truncated) <= maxWidth {
+		if canvas.GetTextWidth(truncated) <= maxWidth {
 			left = mid + 1
 		} else {
 			right = mid
