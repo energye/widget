@@ -145,10 +145,10 @@ func (m *TTab) NewPage() *TPage {
 	// 事件处理
 	tabSheet.SetOnShow(func(sender lcl.IObject) {
 		if m.onChange != nil {
-			m.onChange(m)
+			m.onChange(page)
 		}
 		if page.onShow != nil {
-			page.onShow(sender)
+			page.onShow(page)
 		}
 	})
 	tabSheet.SetOnHide(func(sender lcl.IObject) {
